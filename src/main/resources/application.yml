@@ -1,0 +1,7 @@
+occam:
+  lti:
+    ultra:
+      issuer: https://blackboard.com
+      authorization-host: https://developer.blackboard.com
+      application-id: <application-id>
+      host: <host>
