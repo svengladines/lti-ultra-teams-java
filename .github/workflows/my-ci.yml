@@ -2,7 +2,7 @@
 # build a Java project with Maven
 # cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
-name: My CI
+name: My C/I
 
 on:
   push:
