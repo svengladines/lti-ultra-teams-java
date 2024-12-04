@@ -2,9 +2,11 @@ package be.occam.lti.ultra.teams.domain.service;
 
 import be.occam.lti.ultra.teams.domain.LTIUser;
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.JWTParser;
 import com.nimbusds.oauth2.sdk.*;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
@@ -14,15 +16,14 @@ import com.nimbusds.oauth2.sdk.token.Token;
 import com.nimbusds.oauth2.sdk.token.TypelessToken;
 import com.nimbusds.openid.connect.sdk.*;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
-import com.nimbusds.oauth2.sdk.http.HTTPResponse;
+import org.jsoup.Connection.KeyVal;
+import org.jsoup.Jsoup;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import org.jsoup.Jsoup;
-import org.jsoup.Connection.KeyVal;
-import com.nimbusds.jwt.JWTParser;
 
 import java.net.URI;
+import java.net.URL;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -37,20 +38,25 @@ public class LTIService {
     @Value("https://foo.bar/launch")
     protected URI redirectUri;
 
-    @Value("https://${ultra.host}/learn/api/public/v1/oauth2/authorizationcode")
+    @Value("https://${occam.lti.ultra.host}/learn/api/public/v1/oauth2/authorizationcode")
     protected URI oauthAuthorizationUri;
 
-    @Value("${occam.lti.dev-bb}/api/v1/gateway/oidcauth")
+    protected final ClientID ltiClientId;
+
+    @Value("${occam.lti.ultra.authorization-host}/api/v1/gateway/oidcauth")
     private URI ltiLaunchUri;
 
-    @Value("${occam.client.learn.client-id}")
-    protected ClientID oauthId;
-
-    @Value("${occam.lti.application-id}")
-    private ClientID ltiId;
-
-    public LTIService(IDTokenValidator ltiIdTokenValidator) {
-        this.ltiIdTokenValidator = ltiIdTokenValidator;
+    public LTIService(
+                       @Value("${occam.lti.ultra.issuer}") Issuer issuer,
+                       @Value("${occam.lti.ultra.application-id}") ClientID clientId,
+                       @Value("${occam.lti.ultra.authorization-host}/.well-known/jwks.json") URL jwkSetUrl) {
+        this.ltiClientId = clientId;
+        this.ltiIdTokenValidator = new IDTokenValidator(
+                issuer,
+                this.ltiClientId,
+                JWSAlgorithm.RS256,
+                jwkSetUrl
+        );;
     }
 
     public void thirdPartyLogin(
@@ -76,7 +82,7 @@ public class LTIService {
         // Normally the browser executes this and the user is prompted to give permission.
         // However the 'permission prompt' is disabled for this oauth application in ultra
         // and the 'one_time_session_token' allows us to start the request in the backend.
-        AuthorizationRequest authorizationRequest = new AuthorizationRequest.Builder(ResponseType.CODE, oauthId)
+        AuthorizationRequest authorizationRequest = new AuthorizationRequest.Builder(ResponseType.CODE, ltiClientId)
                 .endpointURI(oauthAuthorizationUri)
                 .redirectionURI(redirectUri)
                 .state(expectedState)
@@ -117,7 +123,7 @@ public class LTIService {
             // The initial (and only) lti authentication request
             // Normally the browser executes this in an iframe, but without cookies we cannot verify the state or nonce parameter.
             // 'login_hint' and 'lti_message_hint) effectively act as one-time-session-token
-            AuthenticationRequest authenticationRequest = new AuthenticationRequest.Builder(ResponseType.IDTOKEN, new Scope(OPENID), ltiId, redirectUri)
+            AuthenticationRequest authenticationRequest = new AuthenticationRequest.Builder(ResponseType.IDTOKEN, new Scope(OPENID), this.ltiClientId, redirectUri)
                     .endpointURI(ltiLaunchUri)
                     .responseMode(ResponseMode.FORM_POST)
                     .prompt(Prompt.Type.NONE)

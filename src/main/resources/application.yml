@@ -1,3 +1,13 @@
+management:
+  health:
+    diskspace:
+      enabled: false
+  endpoints:
+    enabled-by-default: false
+  endpoint:
+    health:
+      enabled: true
+
 occam:
   lti:
     ultra:
