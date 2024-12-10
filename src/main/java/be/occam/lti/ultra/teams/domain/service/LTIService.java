@@ -35,7 +35,7 @@ public class LTIService {
 
     protected final IDTokenValidator ltiIdTokenValidator;
 
-    @Value("https://uef.t.edu.kuleuven.cloud/uef")
+    @Value("${occam.lti.ultra.target.meeting}")
     protected URI redirectUri;
 
     @Value("https://${occam.lti.ultra.host}/learn/api/public/v1/oauth2/authorizationcode")
