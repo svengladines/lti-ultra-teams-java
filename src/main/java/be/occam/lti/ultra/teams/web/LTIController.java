@@ -34,15 +34,16 @@ public class LTIController {
                                 @RequestParam("lti_message_hint") String lti_message_hint,
                                 Model model) {
         // ltiService.thirdPartyLogin(iss, targetLinkUri, clientId, loginHint, lti_message_hint);
-        return "redirect:http://localhost:8080%s?target_link_uri=%s&client_id=%s&login_hint=%s&lti_message_hint=%s".formatted(
+        return "redirect:http://localhost:8080%s?ltiLoginLocal?issuer=%s&target_link_uri=%s&client_id=%s&login_hint=%s&lti_message_hint=%s".formatted(
         LTI_LOGIN_PATH,
-        targetLinkUri,
-        clientId,
+        iss.getValue(),
+        targetLinkUri.toString(),
+        clientId.getValue(),
         loginHint,
         lti_message_hint);
     }
 
-    @GetMapping(value = LTI_LOGIN_PATH + "2")
+    @GetMapping(value = LTI_LOGIN_PATH + "Local")
     public void loginLocal(@RequestParam Issuer iss,
                         @RequestParam("target_link_uri") URI targetLinkUri,
                         @RequestParam("client_id") ClientID clientId,
