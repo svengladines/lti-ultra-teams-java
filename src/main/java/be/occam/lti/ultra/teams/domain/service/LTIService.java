@@ -35,7 +35,7 @@ public class LTIService {
 
     protected final IDTokenValidator ltiIdTokenValidator;
 
-    @Value("https://foo.bar/launch")
+    @Value("https://uef.t.edu.kuleuven.cloud/uef")
     protected URI redirectUri;
 
     @Value("https://${occam.lti.ultra.host}/learn/api/public/v1/oauth2/authorizationcode")
@@ -48,7 +48,7 @@ public class LTIService {
 
     public LTIService(
                        @Value("${occam.lti.ultra.issuer}") Issuer issuer,
-                       @Value("${occam.lti.ultra.application-id}") ClientID clientId,
+                       @Value("${occam.lti.ultra.client-id}") ClientID clientId,
                        @Value("${occam.lti.ultra.authorization-host}/.well-known/jwks.json") URL jwkSetUrl) {
         this.ltiClientId = clientId;
         this.ltiIdTokenValidator = new IDTokenValidator(

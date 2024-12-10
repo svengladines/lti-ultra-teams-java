@@ -4,6 +4,7 @@ import be.occam.lti.ultra.teams.domain.service.LTIService;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,8 +16,8 @@ import java.net.URI;
 @RestController
 public class LTIController {
 
-    public static final String LTI_LOGIN_PATH = "/login";
-    public static final String LTI_LAUNCH_PATH = "/launch";
+    public static final String LTI_LOGIN_PATH = "/ltiLogin";
+    public static final String LTI_LAUNCH_PATH = "/ltiLaunch";
 
     protected final LTIService ltiService;
 
@@ -26,13 +27,14 @@ public class LTIController {
     }
 
     @GetMapping(value = LTI_LOGIN_PATH)
-    public void login( @RequestParam Issuer iss,
-                       @RequestParam("target_link_uri") URI targetLinkUri,
-                       @RequestParam ClientID clientId,
-                       @RequestParam("login_hint") String loginHint,
-                       @RequestParam String lti_message_hint,
-                       Model model) {
-        ltiService.thirdPartyLogin(iss, targetLinkUri, clientId, loginHint, lti_message_hint);
+    public String login(@RequestParam Issuer iss,
+                                @RequestParam("target_link_uri") URI targetLinkUri,
+                                @RequestParam("client_id") ClientID clientId,
+                                @RequestParam("login_hint") String loginHint,
+                                @RequestParam("lti_message_hint") String lti_message_hint,
+                                Model model) {
+        // ltiService.thirdPartyLogin(iss, targetLinkUri, clientId, loginHint, lti_message_hint);
+        return "redirect:http://localhost:8080" + LTI_LOGIN_PATH ;
     }
 
     @PostMapping(value = LTI_LAUNCH_PATH)

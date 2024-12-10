@@ -16,8 +16,10 @@ public class SecurityConfig {
         return http
             .csrf(c -> c.disable())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/actuator/health").permitAll())
-                .authorizeHttpRequests(authz -> authz.requestMatchers("/error").permitAll())
-            .sessionManagement(config -> config.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/error").permitAll())
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/ltiLogin").permitAll())
+            // temporary!
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/ltiLaunch").permitAll())
             .build();
     }
 
