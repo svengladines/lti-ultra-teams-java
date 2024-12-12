@@ -18,6 +18,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz.requestMatchers("/actuator/health").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/error").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/ltiLogin").permitAll())
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/ltiLoginLocal").permitAll())
             // temporary!
             .authorizeHttpRequests(authz -> authz.requestMatchers("/ltiLaunch").permitAll())
             .build();

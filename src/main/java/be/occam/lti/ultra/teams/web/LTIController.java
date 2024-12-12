@@ -48,12 +48,11 @@ public class LTIController {
                 .path("%s%s".formatted(LTI_LOGIN_PATH,"Local"))
                 .queryParam("iss", UriUtils.encodeQueryParam(iss.getValue(), Charset.defaultCharset()))
                 .queryParam("target_link_uri", UriUtils.encodeQueryParam(targetLinkUri.toString(),Charset.defaultCharset()))
-                .queryParam("client_id", UriUtils.encodeQueryParam(clientId.getValue(),Charset.defaultCharset()))
-                .queryParam("loginHint", UriUtils.encodeQueryParam(loginHint,Charset.defaultCharset()))
-                .queryParam("lti_message_hint", UriUtils.encodeQueryParam(lti_message_hint,Charset.defaultCharset()))
+                .queryParam("client_id", clientId.getValue(),Charset.defaultCharset())
+                .queryParam("login_hint", loginHint,Charset.defaultCharset())
+                .queryParam("lti_message_hint", lti_message_hint,Charset.defaultCharset())
                 .build();
         return "redirect:%s".formatted(redirectURI.toString());
-
     }
 
     @GetMapping(value = LTI_LOGIN_PATH + "Local")

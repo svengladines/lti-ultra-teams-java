@@ -18,6 +18,7 @@ import com.nimbusds.openid.connect.sdk.*;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import org.jsoup.Connection.KeyVal;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -134,8 +135,8 @@ public class LTIService {
                     .build();
 
             // Self-posting form that blackboard uses...
-            Map<String, String> formParams = Jsoup
-                    .parse(authenticationRequest.toHTTPRequest().send().getBody())
+            Document doc = Jsoup.parse(authenticationRequest.toHTTPRequest().send().getBody());
+            Map<String, String> formParams = doc
                     .expectForm("#bltiLaunchForm")
                     .formData()
                     .stream()
