@@ -29,10 +29,14 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.DefaultUriBuilderFactory;
+import org.springframework.web.util.UriUtils;
 
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.nimbusds.openid.connect.sdk.OIDCScopeValue.OPENID;
@@ -65,7 +69,7 @@ public class LTIService {
         );;
     }
 
-    public void thirdPartyLogin(
+    public URI thirdPartyLogin(
             Issuer issuer,
             URI redirectUri,
             ClientID clientId,
@@ -79,11 +83,30 @@ public class LTIService {
             throw new ResponseStatusException(BAD_REQUEST);
         }
 
+        /* move to launch ...
         final LTIUser ltiUser = ltiLogin(loginHint, ltiMessageHint);
         PreAuthenticatedAuthenticationToken authentication = new PreAuthenticatedAuthenticationToken(ltiUser.userId(), ltiUser.oneTimeSessionToken());
         SecurityContextHolder.getContext().setAuthentication(authentication);
         HttpSession session = httpRequest.getSession(true);
         session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
+         */
+        URI redirectURI = new DefaultUriBuilderFactory()
+                .builder()
+                .scheme(this.oauthAuthorizationUri.getScheme())
+                .host(this.oauthAuthorizationUri.getHost())
+                .path(this.oauthAuthorizationUri.getPath())
+                .queryParam("scope", "openid")
+                .queryParam("response_type", "id_token")
+                .queryParam("client_id", clientId.getValue())
+                .queryParam("redirect_uri", UriUtils.encodeQueryParam(this.redirectUri.toString(),Charset.defaultCharset()))
+                // TODO - store login hint for later verification
+                .queryParam("login_hint", loginHint)
+                .queryParam("response_mode", "form_post")
+                // TODO - store nonce for later verification
+                .queryParam("nonce", UUID.randomUUID().toString().replace("-",""))
+                .queryParam("prompt", "none")
+                .build();
+        return redirectURI;
     }
 
     protected AuthorizationCode getOauthCode(Token oneTimeSessionToken) {
@@ -123,7 +146,8 @@ public class LTIService {
         }
     }
 
-    private LTIUser ltiLogin(String loginHint, String ltiMessageHint) {
+
+    private LTIUser manualLtiLogin(String loginHint, String ltiMessageHint) {
 
         final State expectedState = new State();
         final Nonce expectedNonce = new Nonce();
