@@ -19,6 +19,8 @@ import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import org.jsoup.Connection.KeyVal;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -34,14 +36,12 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 @Service
 public class LTIService {
 
+    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final IDTokenValidator ltiIdTokenValidator;
-
     @Value("${occam.lti.ultra.target.meeting}")
     protected URI redirectUri;
-
     @Value("https://${occam.lti.ultra.host}/learn/api/public/v1/oauth2/authorizationcode")
     protected URI oauthAuthorizationUri;
-
     protected final ClientID ltiClientId;
 
     @Value("${occam.lti.ultra.authorization-host}/api/v1/gateway/oidcauth")
@@ -135,7 +135,9 @@ public class LTIService {
                     .build();
 
             // Self-posting form that blackboard uses...
-            Document doc = Jsoup.parse(authenticationRequest.toHTTPRequest().send().getBody());
+            String body = authenticationRequest.toHTTPRequest().send().getBody();
+            logger.info("received HTML document: {}", body);
+            Document doc = Jsoup.parse(body);
             Map<String, String> formParams = doc
                     .expectForm("#bltiLaunchForm")
                     .formData()
