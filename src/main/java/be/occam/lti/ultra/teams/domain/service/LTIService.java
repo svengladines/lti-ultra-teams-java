@@ -16,12 +16,17 @@ import com.nimbusds.oauth2.sdk.token.Token;
 import com.nimbusds.oauth2.sdk.token.TypelessToken;
 import com.nimbusds.openid.connect.sdk.*;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.jsoup.Connection.KeyVal;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -65,7 +70,8 @@ public class LTIService {
             URI redirectUri,
             ClientID clientId,
             String loginHint,
-            String ltiMessageHint) {
+            String ltiMessageHint,
+            HttpServletRequest httpRequest) {
         if (
             !ltiIdTokenValidator.getExpectedIssuer().equals(issuer) ||
                 !ltiIdTokenValidator.getClientID().equals(clientId) ||
@@ -74,7 +80,10 @@ public class LTIService {
         }
 
         final LTIUser ltiUser = ltiLogin(loginHint, ltiMessageHint);
-        final AuthorizationCode oauthCode = getOauthCode(ltiUser.oneTimeSessionToken());
+        PreAuthenticatedAuthenticationToken authentication = new PreAuthenticatedAuthenticationToken(ltiUser.userId(), ltiUser.oneTimeSessionToken());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        HttpSession session = httpRequest.getSession(true);
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
     }
 
     protected AuthorizationCode getOauthCode(Token oneTimeSessionToken) {
@@ -154,7 +163,7 @@ public class LTIService {
             JWTClaimsSet claimsSet = validateToken(idToken, expectedNonce);
 
             return new LTIUser(
-                    new Subject(claimsSet.getJSONObjectClaim("https://purl.imsglobal.org/spec/lti/claim/custom").get("blackboard_userid").toString()),
+                    new Subject(claimsSet.getJSONObjectClaim("https://purl.imsglobal.org/spec/lti/claim/lis").get("person_sourcedid").toString()),
                     new TypelessToken(claimsSet.getStringClaim("https://blackboard.com/lti/claim/one_time_session_token"))
             );
         }
