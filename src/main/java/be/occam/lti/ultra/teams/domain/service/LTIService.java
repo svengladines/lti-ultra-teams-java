@@ -17,16 +17,12 @@ import com.nimbusds.oauth2.sdk.token.TypelessToken;
 import com.nimbusds.openid.connect.sdk.*;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import org.jsoup.Connection.KeyVal;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.DefaultUriBuilderFactory;
@@ -54,7 +50,7 @@ public class LTIService {
     protected final ClientID ltiClientId;
 
     @Value("${occam.lti.ultra.authorization-host}/api/v1/gateway/oidcauth")
-    private URI ltiLaunchUri;
+    private URI oauthOidcInitUri;
 
     public LTIService(
                        @Value("${occam.lti.ultra.issuer}") Issuer issuer,
@@ -92,15 +88,16 @@ public class LTIService {
          */
         URI redirectURI = new DefaultUriBuilderFactory()
                 .builder()
-                .scheme(this.oauthAuthorizationUri.getScheme())
-                .host(this.oauthAuthorizationUri.getHost())
-                .path(this.oauthAuthorizationUri.getPath())
+                .scheme(this.oauthOidcInitUri.getScheme())
+                .host(this.oauthOidcInitUri.getHost())
+                .path(this.oauthOidcInitUri.getPath())
                 .queryParam("scope", "openid")
                 .queryParam("response_type", "id_token")
                 .queryParam("client_id", clientId.getValue())
                 .queryParam("redirect_uri", UriUtils.encodeQueryParam(this.redirectUri.toString(),Charset.defaultCharset()))
                 // TODO - store login hint for later verification
                 .queryParam("login_hint", loginHint)
+                .queryParam("lti_message_hint", ltiMessageHint)
                 .queryParam("response_mode", "form_post")
                 // TODO - store nonce for later verification
                 .queryParam("nonce", UUID.randomUUID().toString().replace("-",""))
@@ -158,7 +155,7 @@ public class LTIService {
             // Normally the browser executes this in an iframe, but without cookies we cannot verify the state or nonce parameter.
             // 'login_hint' and 'lti_message_hint) effectively act as one-time-session-token
             AuthenticationRequest authenticationRequest = new AuthenticationRequest.Builder(ResponseType.IDTOKEN, new Scope(OPENID), this.ltiClientId, redirectUri)
-                    .endpointURI(ltiLaunchUri)
+                    .endpointURI(oauthOidcInitUri)
                     .responseMode(ResponseMode.FORM_POST)
                     .prompt(Prompt.Type.NONE)
                     .state(expectedState)

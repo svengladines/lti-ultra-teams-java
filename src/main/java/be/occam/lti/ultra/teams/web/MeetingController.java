@@ -2,6 +2,7 @@ package be.occam.lti.ultra.teams.web;
 
 import be.occam.lti.ultra.teams.domain.service.LTIService;
 import be.occam.lti.ultra.teams.domain.service.MeetingService;
+import com.azure.core.annotation.Get;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,6 +30,8 @@ public class MeetingController {
 
     public static final String PATH = "/meeting";
     public static final String PATH_LOCAL = "/meetingLocal";
+    // #TODO not REST!
+    public static final String PATH_CREATE = "/meeting/create";
 
     protected final MeetingService meetingService;
 
@@ -40,7 +43,7 @@ public class MeetingController {
     @PostMapping(value = PATH)
     public ResponseEntity<String> launch() {
         MultiValueMap<String,String> headers = new HttpHeaders();
-        headers.add("Location", "/meetingLocal");
+        headers.add("Location", "http://localhost:8080/meetingLocal");
         return new ResponseEntity<>(headers,HttpStatus.TEMPORARY_REDIRECT);
     }
 
@@ -52,4 +55,11 @@ public class MeetingController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @GetMapping(value = PATH_CREATE)
+    public ResponseEntity<String> create(
+            @RequestParam("subject") String subject,
+            Principal principal) {
+        this.meetingService.createMeeting(principal.getName(),subject);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }

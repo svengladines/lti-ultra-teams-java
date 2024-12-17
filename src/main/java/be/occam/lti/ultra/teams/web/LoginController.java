@@ -5,8 +5,12 @@ import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -52,14 +56,16 @@ public class LoginController {
     }
 
     @GetMapping(value = LTI_LOGIN_PATH + "Local")
-    public String loginLocal(@RequestParam("iss") Issuer iss,
+    public ResponseEntity<String> loginLocal(@RequestParam("iss") Issuer iss,
                         @RequestParam("target_link_uri") URI targetLinkUri,
                         @RequestParam("client_id") ClientID clientId,
                         @RequestParam("login_hint") String loginHint,
                         @RequestParam("lti_message_hint") String lti_message_hint,
                         HttpServletRequest httpRequest,
                         Model model) {
-        ltiService.thirdPartyLogin(iss, targetLinkUri, clientId, loginHint, lti_message_hint, httpRequest);
-        return "redirect:meeting";
+        URI redirect = ltiService.thirdPartyLogin(iss, targetLinkUri, clientId, loginHint, lti_message_hint, httpRequest);
+        MultiValueMap<String,String> headers = new HttpHeaders();
+        headers.add("Location", redirect.toString());
+        return new ResponseEntity<>(headers, HttpStatus.TEMPORARY_REDIRECT);
     }
 }

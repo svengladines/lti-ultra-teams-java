@@ -19,8 +19,13 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz.requestMatchers("/error").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/ltiLogin").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/ltiLoginLocal").permitAll())
-            // temporary!
-            .authorizeHttpRequests(authz -> authz.requestMatchers("/ltiLaunch").permitAll())
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/login/*").permitAll())
+            //
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting").authenticated())
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/meetingLocal").authenticated())
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting/create").authenticated())
+            //.oauth2Login(configurer -> configurer.defaultSuccessUrl("/graphed",true))
+            //.oauth2Login(Customizer.withDefaults())
             .build();
     }
 

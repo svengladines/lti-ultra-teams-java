@@ -15,3 +15,27 @@ occam:
       authorization-host: https://developer.blackboard.com
       application-id: <application-id>
       host: <host>
+      infrastructure:
+        microsoft:
+          client-id: <vaulted>
+          client-secret: <vaulted>
+          scopes: https://graph.microsoft.com/.default
+
+#spring:
+#  security:
+#    oauth2:
+#      client:
+#        registration:
+#          azure:
+#            client-id: <vaulted>
+#            client-secret: <vaulted>
+#            scope: openid, profile, email, offline_access, https://graph.microsoft.com/OnlineMeetings.ReadWrite
+#            authorization-grant-type: authorization_code
+#            redirect-uri: "${occam.lti.ultra.teams.base-url}/login/oauth2/code/azure"
+#        provider:
+#          azure:
+#            authorization-uri: https://login.microsoftonline.com/${microsoft.tenant}/oauth2/v2.0/authorize
+#            token-uri: https://login.microsoftonline.com/${microsoft.tenant}/oauth2/v2.0/token
+#            user-info-uri: https://graph.microsoft.com/oidc/userinfo
+#            jwk-set-uri: https://login.microsoftonline.com/${microsoft.tenant}/discovery/v2.0/keys
+#            user-name-attribute: email
