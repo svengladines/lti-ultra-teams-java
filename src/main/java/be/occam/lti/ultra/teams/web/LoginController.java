@@ -24,6 +24,7 @@ import java.nio.charset.Charset;
 public class LoginController {
 
     public static final String LTI_LOGIN_PATH = "/ltiLogin";
+    public static final String OIDC_LOGIN_PATH = "/oidc";
 
     protected final LTIService ltiService;
 
@@ -68,4 +69,5 @@ public class LoginController {
         headers.add("Location", redirect.toString());
         return new ResponseEntity<>(headers, HttpStatus.TEMPORARY_REDIRECT);
     }
+
 }

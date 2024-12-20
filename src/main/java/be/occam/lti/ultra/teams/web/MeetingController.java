@@ -11,6 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.MultiValueMap;
@@ -33,10 +34,12 @@ public class MeetingController {
     // #TODO not REST!
     public static final String PATH_CREATE = "/meeting/create";
 
+    protected final LTIService ltiService;
     protected final MeetingService meetingService;
 
     @Autowired
-    public MeetingController(MeetingService meetingService) {
+    public MeetingController(LTIService ltiService, MeetingService meetingService) {
+        this.ltiService = ltiService;
         this.meetingService = meetingService;
     }
 
@@ -48,18 +51,19 @@ public class MeetingController {
     }
 
     @PostMapping(value = PATH_LOCAL)
-    public ResponseEntity<String> launchLocal(
+    public String launchLocal(
             @RequestParam("id_token") String idToken,
             @RequestParam("state") String state,
-            Principal principal) {
-        return new ResponseEntity<>(HttpStatus.OK);
+            HttpServletRequest httpRequest,
+            String subject) {
+        this.ltiService.authenticated(idToken, state,httpRequest);
+        return "deeplinking-reponse";
     }
 
     @GetMapping(value = PATH_CREATE)
     public ResponseEntity<String> create(
             @RequestParam("subject") String subject,
-            Principal principal) {
-        this.meetingService.createMeeting(principal.getName(),subject);
-        return new ResponseEntity<>(HttpStatus.OK);
+            PreAuthenticatedAuthenticationToken user) {
+        return new ResponseEntity<>(this.meetingService.createMeeting(user,subject),HttpStatus.CREATED);
     }
 }

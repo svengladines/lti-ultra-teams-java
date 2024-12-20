@@ -21,11 +21,24 @@ occam:
           client-secret: <vaulted>
           scopes: https://graph.microsoft.com/.default
 
-#spring:
-#  security:
-#    oauth2:
-#      client:
-#        registration:
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          ultra:
+             client-id: <vaulted>
+             client-secret: <vaulted>
+             scope: openid
+             authorization-grant-type: authorization_code
+             redirect-uri: "${occam.lti.ultra.teams.base-url}/login/oauth2/code/ultra"
+        provider:
+          ultra:
+            authorization-uri: https://developer.blackboard.com/api/v1/gateway/oidcauth
+            token-uri: https://developer.blackboard.com/api/v1/gateway/oauth2/jwttoken
+#            user-info-uri: https://graph.microsoft.com/oidc/userinfo
+            jwk-set-uri: https://developer.blackboard.com/api/v1/management/applications/e7f38cb9-05f6-4d15-a133-dfe7f8f53fda/jwks.json
+#            user-name-attribute: email
 #          azure:
 #            client-id: <vaulted>
 #            client-secret: <vaulted>

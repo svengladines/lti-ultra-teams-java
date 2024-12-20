@@ -1,12 +1,15 @@
 package be.occam.lti.ultra.teams.domain.service;
 
+import be.occam.lti.ultra.teams.domain.LTIContentItem;
 import be.occam.lti.ultra.teams.domain.LTIUser;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
+import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.oauth2.sdk.*;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
@@ -17,12 +20,16 @@ import com.nimbusds.oauth2.sdk.token.TypelessToken;
 import com.nimbusds.openid.connect.sdk.*;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.jsoup.Connection.KeyVal;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.DefaultUriBuilderFactory;
@@ -31,6 +38,12 @@ import org.springframework.web.util.UriUtils;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.security.Principal;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.TemporalAmount;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -40,6 +53,9 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Service
 public class LTIService {
+
+    protected final String SESSION_ATTRIBUTE_NONCE = "ltiNonce";
+    protected final String SESSION_ATTRIBUTE_JWT = "ltiToken";
 
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final IDTokenValidator ltiIdTokenValidator;
@@ -54,8 +70,8 @@ public class LTIService {
 
     public LTIService(
                        @Value("${occam.lti.ultra.issuer}") Issuer issuer,
-                       @Value("${occam.lti.ultra.client-id}") ClientID clientId,
-                       @Value("${occam.lti.ultra.authorization-host}/.well-known/jwks.json") URL jwkSetUrl) {
+                       @Value("${spring.security.oauth2.client.registration.ultra.client-id}") ClientID clientId,
+                       @Value("${spring.security.oauth2.client.provider.ultra.jwk-set-uri}") URL jwkSetUrl) {
         this.ltiClientId = clientId;
         this.ltiIdTokenValidator = new IDTokenValidator(
                 issuer,
@@ -79,13 +95,12 @@ public class LTIService {
             throw new ResponseStatusException(BAD_REQUEST);
         }
 
-        /* move to launch ...
-        final LTIUser ltiUser = ltiLogin(loginHint, ltiMessageHint);
-        PreAuthenticatedAuthenticationToken authentication = new PreAuthenticatedAuthenticationToken(ltiUser.userId(), ltiUser.oneTimeSessionToken());
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String nonce = UUID.randomUUID().toString().replace("-","");
+
         HttpSession session = httpRequest.getSession(true);
-        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
-         */
+        // TODO: make multi-tab-safe (session shared between tabs)
+        session.setAttribute(SESSION_ATTRIBUTE_NONCE, nonce);
+
         URI redirectURI = new DefaultUriBuilderFactory()
                 .builder()
                 .scheme(this.oauthOidcInitUri.getScheme())
@@ -99,96 +114,63 @@ public class LTIService {
                 .queryParam("login_hint", loginHint)
                 .queryParam("lti_message_hint", ltiMessageHint)
                 .queryParam("response_mode", "form_post")
-                // TODO - store nonce for later verification
-                .queryParam("nonce", UUID.randomUUID().toString().replace("-",""))
+                .queryParam("nonce", nonce)
                 .queryParam("prompt", "none")
                 .build();
+
+        logger.info("redirect uri = [{}]", redirectURI.toString());
         return redirectURI;
     }
 
-    protected AuthorizationCode getOauthCode(Token oneTimeSessionToken) {
-        final State expectedState = new State();
-        // The initial oauth authentication request.
-        // Normally the browser executes this and the user is prompted to give permission.
-        // However the 'permission prompt' is disabled for this oauth application in ultra
-        // and the 'one_time_session_token' allows us to start the request in the backend.
-        AuthorizationRequest authorizationRequest = new AuthorizationRequest.Builder(ResponseType.CODE, ltiClientId)
-                .endpointURI(oauthAuthorizationUri)
-                .redirectionURI(redirectUri)
-                .state(expectedState)
-                .customParameter("one_time_session_token", oneTimeSessionToken.getValue())
-                .build();
-
+    public void authenticated(String idTokenString, String stateString, HttpServletRequest httpRequest) {
         try {
-            // Self-posting form that blackboard uses...
-            String locationHeader = Jsoup
-                    .parse(authorizationRequest.toHTTPRequest().send().getBody())
-                    .expectForm("#bltiLaunchForm")
-                    .submit()
-                    .followRedirects(false)
-                    .execute()
-                    .header("location");
-
-            if(locationHeader == null) {
-                throw new RuntimeException("Could not start oauth flow");
-            }
-            AuthenticationResponse authenticationResponse = AuthenticationResponseParser.parse(URI.create(locationHeader));
-            if(!expectedState.equals(authenticationResponse.getState())) {
-                throw new RuntimeException();
-            }
-            return authenticationResponse.toSuccessResponse().getAuthorizationCode();
+            JWT idToken = JWTParser.parse(idTokenString);
+            State state = State.parse(stateString);
+            HttpSession session = httpRequest.getSession(true);
+            // TODO: make multi-tab-safe (session shared between tabs, should use unique attribute name)
+            String nonce = (String) session.getAttribute(SESSION_ATTRIBUTE_NONCE);
+            JWTClaimsSet jwtClaims = this.validateToken(idToken,new Nonce(nonce));
+            Map<String, Object> claims = jwtClaims.getClaims();
+            Map<String,Object> lisClaims = (Map) claims.get("https://purl.imsglobal.org/spec/lti/claim/lis");
+            logger.info("lis claim is [{}]", lisClaims);
+            String userId = (String) lisClaims.get("person_sourcedid");
+            String email = (String) claims.get("email");
+            String oneTimeSessionId = (String) claims.get("https://blackboard.com/lti/claim/one_time_session_token");
+            LTIUser ltiUser = new LTIUser(new Subject(userId), new TypelessToken(oneTimeSessionId), email);
+            PreAuthenticatedAuthenticationToken authentication = new PreAuthenticatedAuthenticationToken(userId, oneTimeSessionId);
+            authentication.setAuthenticated(true);
+            authentication.setDetails(ltiUser);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
+            session.setAttribute(SESSION_ATTRIBUTE_JWT,idToken);
         }
-        catch(Exception e) {
+        catch(Exception e){
             throw new RuntimeException(e);
         }
     }
 
-
-    private LTIUser manualLtiLogin(String loginHint, String ltiMessageHint) {
-
-        final State expectedState = new State();
-        final Nonce expectedNonce = new Nonce();
-
+    public JWT deepLinkingResponseToken(String title, URL url, HttpServletRequest httpRequest) {
         try {
-
-            // The initial (and only) lti authentication request
-            // Normally the browser executes this in an iframe, but without cookies we cannot verify the state or nonce parameter.
-            // 'login_hint' and 'lti_message_hint) effectively act as one-time-session-token
-            AuthenticationRequest authenticationRequest = new AuthenticationRequest.Builder(ResponseType.IDTOKEN, new Scope(OPENID), this.ltiClientId, redirectUri)
-                    .endpointURI(oauthOidcInitUri)
-                    .responseMode(ResponseMode.FORM_POST)
-                    .prompt(Prompt.Type.NONE)
-                    .state(expectedState)
-                    .nonce(expectedNonce)
-                    .customParameter("login_hint", loginHint)
-                    .customParameter("lti_message_hint", ltiMessageHint)
+            HttpSession session = httpRequest.getSession(false);
+            JWT deepLinkingRequestToken = (JWT) session.getAttribute(SESSION_ATTRIBUTE_JWT);
+            JWSHeader header = new JWSHeader(new JWSAlgorithm(deepLinkingRequestToken.getHeader().getAlgorithm().getName()));
+            JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
+                    .issuer(deepLinkingRequestToken.getJWTClaimsSet().getIssuer())
+                    .audience(deepLinkingRequestToken.getJWTClaimsSet().getAudience())
+                    .expirationTime(new Date(Instant.now().plus(Duration.ofMinutes(5L)).toEpochMilli()))
+                    .issueTime(new Date(Instant.now().plus(Duration.ofMinutes(5L)).toEpochMilli()))
+                    .claim("nonce",deepLinkingRequestToken.getJWTClaimsSet().getClaim("nonce"))
+                    .claim("https://purl.imsglobal.org/spec/lti/claim/deployment_id", deepLinkingRequestToken.getJWTClaimsSet().getClaim("https://purl.imsglobal.org/spec/lti/claim/deployment_id"))
+                    .claim("https://purl.imsglobal.org/spec/lti/claim/message_type","LtiDeepLinkingResponse")
+                    .claim("https://purl.imsglobal.org/spec/lti/claim/version","1.3.0")
+                    .claim("https://purl.imsglobal.org/spec/lti-dl/claim/content_items", List.of(
+                        new LTIContentItem("ltiResourceLink", title, url)
+                    ))
                     .build();
-
-            // Self-posting form that blackboard uses...
-            String body = authenticationRequest.toHTTPRequest().send().getBody();
-            logger.info("received HTML document: {}", body);
-            Document doc = Jsoup.parse(body);
-            Map<String, String> formParams = doc
-                    .expectForm("#bltiLaunchForm")
-                    .formData()
-                    .stream()
-                    .collect(Collectors.toMap(KeyVal::key, KeyVal::value));
-
-            JWT idToken = JWTParser.parse(formParams.get("id_token"));
-            State state = State.parse(formParams.get("state"));
-
-            if (!expectedState.equals(state)) {
-                throw new RuntimeException();
-            }
-
-            JWTClaimsSet claimsSet = validateToken(idToken, expectedNonce);
-
-            return new LTIUser(
-                    new Subject(claimsSet.getJSONObjectClaim("https://purl.imsglobal.org/spec/lti/claim/lis").get("person_sourcedid").toString()),
-                    new TypelessToken(claimsSet.getStringClaim("https://blackboard.com/lti/claim/one_time_session_token"))
-            );
+            SignedJWT deepLinkingResponseToken =  new SignedJWT(header,jwtClaimsSet);
+            return deepLinkingResponseToken;
         }
-        catch(Exception e) {
+        catch(Exception e){
             throw new RuntimeException(e);
         }
     }

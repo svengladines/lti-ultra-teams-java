@@ -22,10 +22,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz.requestMatchers("/login/*").permitAll())
             // permit all as it is the local instance that is authenticated
             .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting").permitAll())
-            .authorizeHttpRequests(authz -> authz.requestMatchers("/meetingLocal").authenticated())
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/meetingLocal").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting/create").authenticated())
+
             //.oauth2Login(configurer -> configurer.defaultSuccessUrl("/graphed",true))
-            //.oauth2Login(Customizer.withDefaults())
             .build();
     }
 
