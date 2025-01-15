@@ -16,16 +16,18 @@ public class SecurityConfig {
         return http
             .csrf(c -> c.disable())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/actuator/health").permitAll())
+
             .authorizeHttpRequests(authz -> authz.requestMatchers("/error").permitAll())
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/favicon.ico").permitAll())
+
             .authorizeHttpRequests(authz -> authz.requestMatchers("/ltiLogin").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/ltiLoginLocal").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/login/*").permitAll())
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/jwks").permitAll())
             // permit all as it is the local instance that is authenticated
             .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/meetingLocal").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting/create").authenticated())
-
-            //.oauth2Login(configurer -> configurer.defaultSuccessUrl("/graphed",true))
             .build();
     }
 

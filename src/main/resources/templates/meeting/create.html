@@ -2,14 +2,13 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Create a new Teams meeting</title>
 </head>
 <body>
 
-    <form id="deeplinking-response-form" method="POST" th:action="${responseUrl}">
-        <input type="hidden" th:value="${jwt}">
+    <form method="POST" th:action="/api/meeting">
+        <input type="text" name="subject">
         <input type="submit">
     </form>
-
 </body>
 </html>

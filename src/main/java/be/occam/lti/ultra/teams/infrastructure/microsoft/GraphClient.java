@@ -20,7 +20,7 @@ public class GraphClient {
         this.graphServiceClient = graphServiceClient;
     }
 
-    public String createMeeting(String organizer, String subject) {
+    public OnlineMeeting createMeeting(String organizer, String subject) {
 
         OnlineMeeting onlineMeeting = new OnlineMeeting();
         onlineMeeting.setSubject(subject);
@@ -34,7 +34,7 @@ public class GraphClient {
                 .onlineMeetings()
                 .post(onlineMeeting);
         log.info("User [{}]; created online meeting [{}]", user.getId(), createdMeeting);
-        return createdMeeting.getJoinWebUrl();
+        return createdMeeting;
     }
 
 }

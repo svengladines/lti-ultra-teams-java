@@ -1,7 +1,6 @@
-package be.occam.lti.ultra.teams.web;
+package be.occam.lti.ultra.teams.web.controller;
 
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class GraphController {

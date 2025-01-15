@@ -1,4 +1,4 @@
-package be.occam.lti.ultra.teams.web;
+package be.occam.lti.ultra.teams.web.controller;
 
 import be.occam.lti.ultra.teams.config.feature.LocalProperties;
 import be.occam.lti.ultra.teams.domain.service.LTIService;
@@ -15,7 +15,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriUtils;

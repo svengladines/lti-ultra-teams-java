@@ -1,32 +1,27 @@
-package be.occam.lti.ultra.teams.web;
+package be.occam.lti.ultra.teams.web.controller;
 
 import be.occam.lti.ultra.teams.config.feature.LocalProperties;
 import be.occam.lti.ultra.teams.domain.LTIUser;
 import be.occam.lti.ultra.teams.domain.TeamsMeeting;
 import be.occam.lti.ultra.teams.domain.service.LTIService;
 import be.occam.lti.ultra.teams.domain.service.MeetingService;
+import be.occam.lti.ultra.teams.web.dto.MeetingDTO;
 import com.nimbusds.jwt.JWT;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
 public class MeetingController {
 
-    public static final String PATH = "/meeting";
-    public static final String PATH_LOCAL = "/meetingLocal";
-    // #TODO not REST!
-    public static final String PATH_GET = "/meetings/{id}";
+    public static final String LAUNCH_PATH = "/meeting";
+    public static final String LAUNCH_PATH_LOCAL = "/meetingLocal";
+
+    public static final String RESOURCE_PATH = "/meetings";
 
     protected final LTIService ltiService;
     protected final MeetingService meetingService;
@@ -39,7 +34,7 @@ public class MeetingController {
         this.localProperties = localProperties;
     }
 
-    @PostMapping(value = PATH)
+    @PostMapping(value = LAUNCH_PATH)
     public String launch(
             @RequestParam("id_token") String idToken,
             @RequestParam("state") String state,
@@ -51,14 +46,10 @@ public class MeetingController {
         }
         // verify LTI claims, etc.
         LTIUser ltiUser = this.ltiService.authenticated(idToken, state,httpRequest);
-        TeamsMeeting teamsMeeting = this.meetingService.create(ltiUser, subject, httpRequest);
-        JWT jwt = this.ltiService.deepLinkingResponseToken(subject,teamsMeeting.url(),httpRequest);
-        model.addAttribute("responseUrl", this.ltiService.deepLinkingResponseURL(httpRequest));
-        model.addAttribute("jwt", jwt.serialize());
-        return "deeplinking-response-meeting";
+        return "meeting/create";
     }
 
-    @PostMapping(value = PATH_LOCAL)
+    @PostMapping(value = LAUNCH_PATH_LOCAL)
     public String launchLocal(
             @RequestParam("id_token") String idToken,
             @RequestParam("state") String state,
@@ -66,18 +57,31 @@ public class MeetingController {
             Model model) {
         // verify LTI claims, etc.
         LTIUser ltiUser = this.ltiService.authenticated(idToken, state,httpRequest);
-        TeamsMeeting teamsMeeting = this.meetingService.create(ltiUser, subject, httpRequest);
-        JWT jwt = this.ltiService.deepLinkingResponseToken(subject,teamsMeeting.url(),httpRequest);
-        model.addAttribute("responseUrl", this.ltiService.deepLinkingResponseURL(httpRequest));
-        model.addAttribute("jwt", jwt.serialize());
-        return "deeplinking-response-meeting";
+        return "meeting/create";
     }
 
-    @GetMapping(value = PATH_GET)
+    @GetMapping(value = RESOURCE_PATH + "/{id}")
     public String get(
             @PathVariable("id") String id,
             PreAuthenticatedAuthenticationToken user) {
         TeamsMeeting meeting = this.meetingService.get(id);
         return "redirect:%s".formatted(meeting.joinURL());
+    }
+
+    @PostMapping(value = RESOURCE_PATH)
+    public String post(
+            @RequestBody MeetingDTO  meetingDTO,
+            PreAuthenticatedAuthenticationToken user,
+            HttpServletRequest httpRequest,
+            Model model) {
+
+        // verify LTI claims, etc.
+        LTIUser ltiUser = (LTIUser) user.getDetails();
+        String subject = meetingDTO.getSubject();
+        TeamsMeeting teamsMeeting = this.meetingService.create(ltiUser, subject, httpRequest);
+        JWT jwt = this.ltiService.deepLinkingResponseToken(subject,teamsMeeting.url(),httpRequest);
+        model.addAttribute("responseUrl", this.ltiService.deepLinkingResponseURL(httpRequest));
+        model.addAttribute("jwt", jwt.serialize());
+        return "lti/deeplinking-meeting-created";
     }
 }

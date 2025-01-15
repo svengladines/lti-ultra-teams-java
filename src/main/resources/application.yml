@@ -14,7 +14,6 @@ occam:
       issuer: https://blackboard.com
       authorization-host: https://developer.blackboard.com
       application-id: <application-id>
-      host: <host>
       infrastructure:
         microsoft:
           client-id: <vaulted>
