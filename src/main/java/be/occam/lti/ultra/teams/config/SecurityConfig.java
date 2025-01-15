@@ -28,6 +28,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/meetingLocal").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting/create").authenticated())
+
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/pages/meeting/*").authenticated())
             .build();
     }
 

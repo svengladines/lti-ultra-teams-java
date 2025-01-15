@@ -9,11 +9,19 @@ import be.occam.lti.ultra.teams.web.dto.MeetingDTO;
 import com.nimbusds.jwt.JWT;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.DefaultUriBuilderFactory;
+import org.springframework.web.util.UriUtils;
+
+import java.net.URI;
+import java.nio.charset.Charset;
 
 @Controller
 public class MeetingController {
@@ -35,18 +43,29 @@ public class MeetingController {
     }
 
     @PostMapping(value = LAUNCH_PATH)
-    public String launch(
+    public ResponseEntity launch(
             @RequestParam("id_token") String idToken,
             @RequestParam("state") String state,
             HttpServletRequest httpRequest,
             Model model
     ) {
         if (this.localProperties.enabled()) {
-            return "redirect:http://localhost:8080/meetingLocal";
+            URI redirectURI = new DefaultUriBuilderFactory()
+                    .builder()
+                    .scheme("http")
+                    .host("localhost")
+                    .port(8080)
+                    .path(LAUNCH_PATH_LOCAL)
+                    .build();
+            MultiValueMap<String,String> headers = new HttpHeaders();
+            headers.add("Location", redirectURI.toString());
+            return new ResponseEntity<>(headers, HttpStatus.TEMPORARY_REDIRECT);
         }
-        // verify LTI claims, etc.
-        LTIUser ltiUser = this.ltiService.authenticated(idToken, state,httpRequest);
-        return "meeting/create";
+        else {
+            MultiValueMap<String,String> headers = new HttpHeaders();
+            headers.add("Location", "/pages/meeting/create");
+            return new ResponseEntity<>(headers, HttpStatus.FOUND);
+        }
     }
 
     @PostMapping(value = LAUNCH_PATH_LOCAL)
