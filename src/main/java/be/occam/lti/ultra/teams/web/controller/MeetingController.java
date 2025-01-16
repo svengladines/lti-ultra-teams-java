@@ -8,6 +8,8 @@ import be.occam.lti.ultra.teams.domain.service.MeetingService;
 import be.occam.lti.ultra.teams.web.dto.MeetingDTO;
 import com.nimbusds.jwt.JWT;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -29,9 +31,9 @@ public class MeetingController {
 
     public static final String LAUNCH_PATH = "/meeting";
     public static final String LAUNCH_PATH_LOCAL = "/meetingLocal";
-
     public static final String RESOURCE_PATH = "/api/meetings";
 
+    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final LTIService ltiService;
     protected final MeetingService meetingService;
     protected final LocalProperties localProperties;
@@ -44,7 +46,7 @@ public class MeetingController {
     }
 
     @PostMapping(value = LAUNCH_PATH)
-    public ResponseEntity launch(
+    public ResponseEntity<String> launch(
             @RequestParam("id_token") String idToken,
             @RequestParam("state") String state,
             HttpServletRequest httpRequest,
@@ -63,21 +65,26 @@ public class MeetingController {
             return new ResponseEntity<>(headers, HttpStatus.TEMPORARY_REDIRECT);
         }
         else {
+            LTIUser ltiUser = this.ltiService.authenticated(idToken, state,httpRequest);
+            logger.info("User [{}] with email [{}] logged in via LTI", ltiUser.userId(), ltiUser.email());
             MultiValueMap<String,String> headers = new HttpHeaders();
             headers.add("Location", "/pages/meeting/create");
             return new ResponseEntity<>(headers, HttpStatus.FOUND);
         }
     }
 
-    @PostMapping(value = LAUNCH_PATH_LOCAL)
-    public String launchLocal(
+    @PostMapping(value = LAUNCH_PATH)
+    public ResponseEntity<String> launchLocal(
             @RequestParam("id_token") String idToken,
             @RequestParam("state") String state,
             HttpServletRequest httpRequest,
             Model model) {
         // verify LTI claims, etc.
         LTIUser ltiUser = this.ltiService.authenticated(idToken, state,httpRequest);
-        return "meeting/create";
+        logger.info("User [{}] with email [{}] logged in via LTI", ltiUser.userId(), ltiUser.email());
+        MultiValueMap<String,String> headers = new HttpHeaders();
+        headers.add("Location", "/pages/meeting/create");
+        return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
     @GetMapping(value = RESOURCE_PATH + "/{id}")
