@@ -100,6 +100,10 @@ public class LTIService {
             !ltiIdTokenValidator.getExpectedIssuer().equals(issuer) ||
                 !ltiIdTokenValidator.getClientID().equals(clientId) ||
                 !this.redirectUri.equals(redirectUri)) {
+            logger.warn("Invalid LTI request: invalid parameter.");
+            logger.warn("Expected issuer [{}], actual [{}]", ltiIdTokenValidator.getExpectedIssuer(), issuer);
+            logger.warn("Expected client id [{}], actual [{}]", ltiIdTokenValidator.getClientID(), clientId);
+            logger.warn("Expected redirect uri[{}], actual [{}]", this.redirectUri, redirectUri);
             throw new ResponseStatusException(BAD_REQUEST);
         }
 
