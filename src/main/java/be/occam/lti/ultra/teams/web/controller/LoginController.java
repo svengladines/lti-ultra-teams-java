@@ -48,6 +48,7 @@ public class LoginController {
                         HttpServletRequest httpRequest,
                         Model model) {
 
+        logger.info("LTI login with client id [{}]", clientId);
         if (this.localProperties.enabled() ) {
             URI redirectURI = new DefaultUriBuilderFactory()
                     .builder()

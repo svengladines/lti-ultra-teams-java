@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.stereotype.Controller;
@@ -29,7 +30,7 @@ public class MeetingController {
     public static final String LAUNCH_PATH = "/meeting";
     public static final String LAUNCH_PATH_LOCAL = "/meetingLocal";
 
-    public static final String RESOURCE_PATH = "/meetings";
+    public static final String RESOURCE_PATH = "/api/meetings";
 
     protected final LTIService ltiService;
     protected final MeetingService meetingService;
@@ -87,9 +88,9 @@ public class MeetingController {
         return "redirect:%s".formatted(meeting.joinURL());
     }
 
-    @PostMapping(value = RESOURCE_PATH)
+    @PostMapping(value = RESOURCE_PATH, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public String post(
-            @RequestBody MeetingDTO  meetingDTO,
+            @ModelAttribute MeetingDTO meetingDTO,
             PreAuthenticatedAuthenticationToken user,
             HttpServletRequest httpRequest,
             Model model) {

@@ -5,6 +5,7 @@ import be.occam.lti.ultra.teams.domain.LTIUser;
 import com.azure.core.util.UrlBuilder;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.crypto.factories.DefaultJWSSignerFactory;
 import com.nimbusds.jose.proc.BadJOSEException;
 import com.nimbusds.jose.produce.JWSSignerFactory;
@@ -67,6 +68,7 @@ public class LTIService {
     protected URI oauthAuthorizationUri;
     protected final ClientID ltiClientId;
     protected final String ltiClientSecret;
+    protected final JWKSetService jwkSetService;
 
     @Value("${occam.lti.ultra.authorization-host}/api/v1/gateway/oidcauth")
     private URI oauthOidcInitUri;
@@ -75,9 +77,10 @@ public class LTIService {
             @Value("${occam.lti.ultra.issuer}") Issuer issuer,
             @Value("${spring.security.oauth2.client.registration.ultra.client-id}") ClientID clientId,
             @Value("${spring.security.oauth2.client.registration.ultra.client-secret}") String ltiClientSecret,
-            @Value("${spring.security.oauth2.client.provider.ultra.jwk-set-uri}") URL jwkSetUrl) {
+            @Value("${spring.security.oauth2.client.provider.ultra.jwk-set-uri}") URL jwkSetUrl, JWKSetService jwkSetService) {
         this.ltiClientId = clientId;
         this.ltiClientSecret = ltiClientSecret;
+        this.jwkSetService = jwkSetService;
         this.ltiIdTokenValidator = new IDTokenValidator(
                 issuer,
                 this.ltiClientId,
@@ -177,9 +180,9 @@ public class LTIService {
                     ))
                     .build();
             SignedJWT deepLinkingResponseToken =  new SignedJWT(header,jwtClaimsSet);
-            MACSigner macSigner = new MACSigner(this.ltiClientSecret);
+            JWSSigner signer = new RSASSASigner(this.jwkSetService.privateKey());
             try {
-                deepLinkingResponseToken.sign(macSigner);
+                deepLinkingResponseToken.sign(signer);
             } catch (JOSEException e) {
                 throw new RuntimeException(e);
             }

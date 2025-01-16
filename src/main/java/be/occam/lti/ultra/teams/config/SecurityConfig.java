@@ -27,7 +27,7 @@ public class SecurityConfig {
             // permit all as it is the local instance that is authenticated
             .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/meetingLocal").permitAll())
-            .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting/create").authenticated())
+                .authorizeHttpRequests(authz -> authz.requestMatchers("/api/meetings").authenticated())
 
             .authorizeHttpRequests(authz -> authz.requestMatchers("/pages/meeting/*").authenticated())
             .build();
