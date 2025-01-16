@@ -73,7 +73,7 @@ public class MeetingController {
         }
     }
 
-    @PostMapping(value = LAUNCH_PATH)
+    @PostMapping(value = LAUNCH_PATH_LOCAL)
     public ResponseEntity<String> launchLocal(
             @RequestParam("id_token") String idToken,
             @RequestParam("state") String state,
