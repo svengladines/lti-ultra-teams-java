@@ -30,7 +30,7 @@ spring:
              client-secret: <vaulted>
              scope: openid
              authorization-grant-type: authorization_code
-             redirect-uri: "${occam.lti.ultra.teams.base-url}/login/oauth2/code/ultra"
+             redirect-uri: "${occam.lti.ultra.teams.system.base-url}/login/oauth2/code/ultra"
         provider:
           ultra:
             authorization-uri: https://developer.blackboard.com/api/v1/gateway/oidcauth
