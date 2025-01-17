@@ -35,6 +35,7 @@ import org.springframework.security.web.authentication.preauth.PreAuthenticatedA
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.server.session.DefaultWebSessionManager;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriUtils;
 
@@ -45,10 +46,7 @@ import java.security.Principal;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.nimbusds.openid.connect.sdk.OIDCScopeValue.OPENID;
@@ -62,8 +60,8 @@ public class LTIService {
 
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final IDTokenValidator ltiIdTokenValidator;
-    @Value("${occam.lti.ultra.target.meeting}")
-    protected URI redirectUri;
+    @Value("${occam.lti.ultra.teams.system.redirects}")
+    protected URI[] redirects;
     @Value("https://${occam.lti.ultra.host}/learn/api/public/v1/oauth2/authorizationcode")
     protected URI oauthAuthorizationUri;
     protected final ClientID ltiClientId;
@@ -96,19 +94,20 @@ public class LTIService {
             String loginHint,
             String ltiMessageHint,
             HttpServletRequest httpRequest) {
-        if (
-            !ltiIdTokenValidator.getExpectedIssuer().equals(issuer) ||
-                !ltiIdTokenValidator.getClientID().equals(clientId) ||
-                !this.redirectUri.equals(redirectUri)) {
-            logger.warn("Invalid LTI request: invalid parameter.");
-            logger.warn("Expected issuer [{}], actual [{}]", ltiIdTokenValidator.getExpectedIssuer(), issuer);
+        if (!ltiIdTokenValidator.getExpectedIssuer().equals(issuer)) {
+                logger.warn("Expected issuer [{}], actual [{}]", ltiIdTokenValidator.getExpectedIssuer(), issuer);
+                throw new ResponseStatusException(BAD_REQUEST);
+        }
+        else if(!ltiIdTokenValidator.getClientID().equals(clientId)) {
             logger.warn("Expected client id [{}], actual [{}]", ltiIdTokenValidator.getClientID(), clientId);
-            logger.warn("Expected redirect uri[{}], actual [{}]", this.redirectUri, redirectUri);
+            throw new ResponseStatusException(BAD_REQUEST);
+        }
+        else if (!Arrays.stream(this.redirects).anyMatch(r -> r.equals(redirectUri))) {
+            logger.warn("Expected redirect uris {}, actual [{}]", this.redirects, redirectUri);
             throw new ResponseStatusException(BAD_REQUEST);
         }
 
         String nonce = UUID.randomUUID().toString().replace("-","");
-
         HttpSession session = httpRequest.getSession(true);
         // TODO: make multi-tab-safe (session shared between tabs)
         session.setAttribute(SESSION_ATTRIBUTE_NONCE, nonce);
@@ -121,7 +120,7 @@ public class LTIService {
                 .queryParam("scope", "openid")
                 .queryParam("response_type", "id_token")
                 .queryParam("client_id", clientId.getValue())
-                .queryParam("redirect_uri", UriUtils.encodeQueryParam(this.redirectUri.toString(),Charset.defaultCharset()))
+                .queryParam("redirect_uri", UriUtils.encodeQueryParam(redirectUri.toString(),Charset.defaultCharset()))
                 // TODO - store login hint for later verification
                 .queryParam("login_hint", loginHint)
                 .queryParam("lti_message_hint", ltiMessageHint)
@@ -139,6 +138,7 @@ public class LTIService {
             JWT idToken = JWTParser.parse(idTokenString);
             State state = State.parse(stateString);
             HttpSession session = httpRequest.getSession(true);
+            new DefaultWebSessionManager().getSessionIdResolver();
             // TODO: make multi-tab-safe (session shared between tabs, should use unique attribute name)
             String nonce = (String) session.getAttribute(SESSION_ATTRIBUTE_NONCE);
             JWTClaimsSet jwtClaims = this.validateToken(idToken,new Nonce(nonce));
