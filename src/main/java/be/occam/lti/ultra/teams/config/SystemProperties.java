@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record SystemProperties(
         String baseURL,
         String frameURL,
+        String ultraURL,
         String deeplinkURL,
         String jwkID,
         String jwkPublic,

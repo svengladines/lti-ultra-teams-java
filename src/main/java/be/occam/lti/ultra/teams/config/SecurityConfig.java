@@ -21,7 +21,7 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
             .csrf(c -> c.disable())
-            .headers(c -> c.contentSecurityPolicy( p -> p.policyDirectives("frame-ancestors 'self' %s".formatted(this.systemProperties.baseURL()))))
+            .headers(c -> c.contentSecurityPolicy( p -> p.policyDirectives("frame-ancestors 'self' %s".formatted(this.systemProperties.ultraURL()))))
 
             .authorizeHttpRequests(authz -> authz.requestMatchers("/actuator/health").permitAll())
 
