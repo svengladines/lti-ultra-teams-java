@@ -201,15 +201,6 @@ public class LTIService {
         }
     }
 
-    public URL configuredDeepLinkingResponseURL() {
-        try {
-            return UrlBuilder.parse(this.systemProperties.deeplinkingResponseURL()).toUrl();
-        }
-        catch(Exception e){
-            throw new RuntimeException(e);
-        }
-    }
-
     private JWTClaimsSet validateToken(JWT jwt, Nonce expectedNonce) throws BadJOSEException, JOSEException, ParseException {
         if(jwt == null) {
             throw new RuntimeException("Jwt token cannot be null");

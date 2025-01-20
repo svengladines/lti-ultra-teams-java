@@ -1,11 +1,13 @@
 package be.occam.lti.ultra.teams.web.controller;
 
+import be.occam.lti.ultra.teams.config.SystemProperties;
 import be.occam.lti.ultra.teams.config.feature.LocalProperties;
 import be.occam.lti.ultra.teams.domain.LTIUser;
 import be.occam.lti.ultra.teams.domain.TeamsMeeting;
 import be.occam.lti.ultra.teams.domain.service.LTIService;
 import be.occam.lti.ultra.teams.domain.service.MeetingService;
 import be.occam.lti.ultra.teams.web.dto.MeetingDTO;
+import com.azure.core.util.UrlBuilder;
 import com.nimbusds.jwt.JWT;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -21,6 +23,7 @@ import org.springframework.ui.Model;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.DefaultUriBuilderFactory;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.util.UriUtils;
 
 import java.net.URI;
@@ -39,12 +42,14 @@ public class MeetingController {
     protected final LTIService ltiService;
     protected final MeetingService meetingService;
     protected final LocalProperties localProperties;
+    protected final SystemProperties systemProperties;
 
     @Autowired
-    public MeetingController(LTIService ltiService, MeetingService meetingService, LocalProperties localProperties) {
+    public MeetingController(LTIService ltiService, MeetingService meetingService, LocalProperties localProperties, SystemProperties systemProperties) {
         this.ltiService = ltiService;
         this.meetingService = meetingService;
         this.localProperties = localProperties;
+        this.systemProperties = systemProperties;
     }
 
     @PostMapping(value = LAUNCH_PATH)
@@ -98,7 +103,7 @@ public class MeetingController {
     }
 
     @PostMapping(value = RESOURCE_PATH, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public String post(
+    public ResponseEntity<String> post(
             @ModelAttribute MeetingDTO meetingDTO,
             PreAuthenticatedAuthenticationToken user,
             HttpServletRequest httpRequest,
@@ -109,16 +114,26 @@ public class MeetingController {
         String subject = meetingDTO.getSubject();
         TeamsMeeting teamsMeeting = this.meetingService.create(ltiUser, subject, httpRequest);
         JWT jwt = this.ltiService.deepLinkingResponseToken(subject,teamsMeeting.url(),httpRequest);
-        URL deepLinkingResponseURLurl = this.ltiService.configuredDeepLinkingResponseURL();
-        URI redirectURI = new DefaultUriBuilderFactory()
-                .builder()
-                .scheme("http")
-                .host("localhost")
-                .port(8080)
-                .path(PATH_CREATED)
-                .queryParam("fiz", jwt.serialize())
-                .build();
-        return "lti/deeplinking-meeting-created";
+        // now redirect to page that contains self-posting form, via iframe
+        // first build url to self-posting form
+        try {
+            URL urlToForm = UrlBuilder
+                    .parse(this.systemProperties.baseURL())
+                    .setPath(PATH_CREATED)
+                    .addQueryParameter("fiz", jwt.toString())
+                    .toUrl();
+            logger.info("url to form: [{}]", urlToForm);
+            URL redirectURI = UrlBuilder
+                    .parse(this.systemProperties.frameURL())
+                    .addQueryParameter("toolHref", UriComponentsBuilder.fromUriString(urlToForm.toString()).build().encode().toString())
+                    .toUrl();
+            MultiValueMap<String,String> headers = new HttpHeaders();
+            headers.add("Location", redirectURI.toString());
+            return new ResponseEntity<>(HttpStatus.FOUND);
+        }
+        catch(Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @GetMapping(value = PATH_CREATED)
@@ -126,7 +141,7 @@ public class MeetingController {
             @RequestParam String fiz,
             HttpServletRequest httpRequest,
             Model model) {
-        model.addAttribute("responseUrl", this.ltiService.configuredDeepLinkingResponseURL());
+        model.addAttribute("responseUrl", this.systemProperties.deeplinkURL());
         model.addAttribute("jwt", fiz);
         return "lti/deeplinking-meeting-created";
     }

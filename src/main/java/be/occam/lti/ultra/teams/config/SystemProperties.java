@@ -5,7 +5,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "occam.lti.ultra.teams.system")
 public record SystemProperties(
         String baseURL,
-        String deeplinkingResponseURL,
+        String frameURL,
+        String deeplinkURL,
         String jwkID,
         String jwkPublic,
         String jwkPrivate
