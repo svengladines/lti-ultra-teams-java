@@ -129,7 +129,7 @@ public class MeetingController {
                     .toUrl();
             MultiValueMap<String,String> headers = new HttpHeaders();
             headers.add("Location", redirectURI.toString());
-            return new ResponseEntity<>(HttpStatus.FOUND);
+            return new ResponseEntity<>(headers, HttpStatus.FOUND);
         }
         catch(Exception e) {
             throw new RuntimeException(e);
