@@ -15,6 +15,8 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
             .csrf(c -> c.disable())
+            .headers(c -> c.contentSecurityPolicy( p -> p.policyDirectives("frame-ancestors 'self' https://ultra.t.edu.kuleuven.cloud")))
+
             .authorizeHttpRequests(authz -> authz.requestMatchers("/actuator/health").permitAll())
 
             .authorizeHttpRequests(authz -> authz.requestMatchers("/error").permitAll())
