@@ -11,11 +11,17 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class SecurityConfig {
 
+    protected  final SystemProperties systemProperties;
+
+    public SecurityConfig(SystemProperties systemProperties) {
+        this.systemProperties = systemProperties;
+    }
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
             .csrf(c -> c.disable())
-            .headers(c -> c.contentSecurityPolicy( p -> p.policyDirectives("frame-ancestors 'self' https://ultra.t.edu.kuleuven.cloud")))
+            .headers(c -> c.contentSecurityPolicy( p -> p.policyDirectives("frame-ancestors 'self' %s".formatted(this.systemProperties.baseURL()))))
 
             .authorizeHttpRequests(authz -> authz.requestMatchers("/actuator/health").permitAll())
 

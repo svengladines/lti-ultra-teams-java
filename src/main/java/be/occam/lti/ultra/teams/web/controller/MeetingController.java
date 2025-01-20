@@ -28,6 +28,7 @@ import org.springframework.web.util.UriUtils;
 
 import java.net.URI;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 
 @Controller
@@ -120,9 +121,9 @@ public class MeetingController {
             URL urlToForm = UrlBuilder
                     .parse(this.systemProperties.baseURL())
                     .setPath(PATH_CREATED)
-                    .addQueryParameter("fiz", jwt.toString())
+                    .addQueryParameter("fiz", URLEncoder.encode(jwt.serialize(), Charset.defaultCharset()))
                     .toUrl();
-            logger.info("url to form: [{}]", urlToForm);
+            logger.info("url to self submitting form: [{}]", urlToForm);
             URL redirectURI = UrlBuilder
                     .parse(this.systemProperties.frameURL())
                     .addQueryParameter("toolHref", UriComponentsBuilder.fromUriString(urlToForm.toString()).build().encode().toString())
