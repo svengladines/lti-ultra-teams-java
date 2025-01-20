@@ -128,10 +128,13 @@ public class LTIService {
         try {
             JWT idToken = JWTParser.parse(idTokenString);
             State state = State.parse(stateString);
-            HttpSession session = httpRequest.getSession(true);
-            new DefaultWebSessionManager().getSessionIdResolver();
+            HttpSession session = httpRequest.getSession(false);
+            if (session == null ) {
+                throw new IllegalStateException("no current session found");
+            }
             // TODO: make multi-tab-safe (session shared between tabs, should use unique attribute name)
             String nonce = (String) session.getAttribute(SESSION_ATTRIBUTE_NONCE);
+            logger.info("nonce stored in session with id [{}]: [{}]", session.getId(), nonce);
             JWTClaimsSet jwtClaims = this.validateToken(idToken,new Nonce(nonce));
             Map<String, Object> claims = jwtClaims.getClaims();
             Map<String,Object> lisClaims = (Map) claims.get("https://purl.imsglobal.org/spec/lti/claim/lis");
