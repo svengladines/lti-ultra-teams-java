@@ -52,7 +52,7 @@ public class LTIService {
     protected final IDTokenValidator ltiIdTokenValidator;
     @Value("${occam.lti.ultra.teams.system.redirects}")
     protected URI[] redirects;
-    @Value("https://${occam.lti.ultra.teams.system.ultra-url}/learn/api/public/v1/oauth2/authorizationcode")
+    @Value("${occam.lti.ultra.teams.system.ultra-url}/learn/api/public/v1/oauth2/authorizationcode")
     protected URI oauthAuthorizationUri;
     protected final ClientID ltiClientId;
     protected final String ltiClientSecret;
