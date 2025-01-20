@@ -24,6 +24,7 @@ import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriUtils;
 
 import java.net.URI;
+import java.net.URL;
 import java.nio.charset.Charset;
 
 @Controller
@@ -31,6 +32,7 @@ public class MeetingController {
 
     public static final String LAUNCH_PATH = "/meeting";
     public static final String LAUNCH_PATH_LOCAL = "/meetingLocal";
+    public static final String PATH_CREATED = "/meeting/created";
     public static final String RESOURCE_PATH = "/api/meetings";
 
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -107,8 +109,25 @@ public class MeetingController {
         String subject = meetingDTO.getSubject();
         TeamsMeeting teamsMeeting = this.meetingService.create(ltiUser, subject, httpRequest);
         JWT jwt = this.ltiService.deepLinkingResponseToken(subject,teamsMeeting.url(),httpRequest);
-        model.addAttribute("responseUrl", this.ltiService.deepLinkingResponseURL(httpRequest));
-        model.addAttribute("jwt", jwt.serialize());
+        URL deepLinkingResponseURLurl = this.ltiService.configuredDeepLinkingResponseURL();
+        URI redirectURI = new DefaultUriBuilderFactory()
+                .builder()
+                .scheme("http")
+                .host("localhost")
+                .port(8080)
+                .path(PATH_CREATED)
+                .queryParam("fiz", jwt.serialize())
+                .build();
+        return "lti/deeplinking-meeting-created";
+    }
+
+    @GetMapping(value = PATH_CREATED)
+    public String created(
+            @RequestParam String fiz,
+            HttpServletRequest httpRequest,
+            Model model) {
+        model.addAttribute("responseUrl", this.ltiService.configuredDeepLinkingResponseURL());
+        model.addAttribute("jwt", fiz);
         return "lti/deeplinking-meeting-created";
     }
 }

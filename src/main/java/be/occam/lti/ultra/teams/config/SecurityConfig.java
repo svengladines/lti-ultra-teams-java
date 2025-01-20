@@ -27,9 +27,11 @@ public class SecurityConfig {
             // permit all as it is the local instance that is authenticated
             .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/meetingLocal").permitAll())
-                .authorizeHttpRequests(authz -> authz.requestMatchers("/api/meetings").authenticated())
 
-            .authorizeHttpRequests(authz -> authz.requestMatchers("/pages/meeting/*").permitAll())
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/pages/meeting/*").authenticated())
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/api/meetings").authenticated())
+            // this page opens in ultra-frame, no session cookie sent, so permit all for now
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting/created").permitAll())
             .build();
     }
 

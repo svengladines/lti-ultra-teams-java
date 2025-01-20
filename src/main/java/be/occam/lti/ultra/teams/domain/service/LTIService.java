@@ -1,32 +1,26 @@
 package be.occam.lti.ultra.teams.domain.service;
 
+import be.occam.lti.ultra.teams.config.SystemProperties;
 import be.occam.lti.ultra.teams.domain.LTIContentItem;
 import be.occam.lti.ultra.teams.domain.LTIUser;
 import com.azure.core.util.UrlBuilder;
 import com.nimbusds.jose.*;
-import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.RSASSASigner;
-import com.nimbusds.jose.crypto.factories.DefaultJWSSignerFactory;
 import com.nimbusds.jose.proc.BadJOSEException;
-import com.nimbusds.jose.produce.JWSSignerFactory;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
 import com.nimbusds.jwt.SignedJWT;
-import com.nimbusds.oauth2.sdk.*;
+import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
 import com.nimbusds.oauth2.sdk.id.State;
 import com.nimbusds.oauth2.sdk.id.Subject;
-import com.nimbusds.oauth2.sdk.token.Token;
 import com.nimbusds.oauth2.sdk.token.TypelessToken;
-import com.nimbusds.openid.connect.sdk.*;
+import com.nimbusds.openid.connect.sdk.Nonce;
 import com.nimbusds.openid.connect.sdk.validators.IDTokenValidator;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import org.jsoup.Connection.KeyVal;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,14 +36,10 @@ import org.springframework.web.util.UriUtils;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.security.Principal;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.TemporalAmount;
 import java.util.*;
-import java.util.stream.Collectors;
 
-import static com.nimbusds.openid.connect.sdk.OIDCScopeValue.OPENID;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Service
@@ -67,6 +57,7 @@ public class LTIService {
     protected final ClientID ltiClientId;
     protected final String ltiClientSecret;
     protected final JWKSetService jwkSetService;
+    protected final SystemProperties systemProperties;
 
     @Value("${occam.lti.ultra.authorization-host}/api/v1/gateway/oidcauth")
     private URI oauthOidcInitUri;
@@ -75,10 +66,11 @@ public class LTIService {
             @Value("${occam.lti.ultra.issuer}") Issuer issuer,
             @Value("${spring.security.oauth2.client.registration.ultra.client-id}") ClientID clientId,
             @Value("${spring.security.oauth2.client.registration.ultra.client-secret}") String ltiClientSecret,
-            @Value("${spring.security.oauth2.client.provider.ultra.jwk-set-uri}") URL jwkSetUrl, JWKSetService jwkSetService) {
+            @Value("${spring.security.oauth2.client.provider.ultra.jwk-set-uri}") URL jwkSetUrl, JWKSetService jwkSetService, SystemProperties systemProperties) {
         this.ltiClientId = clientId;
         this.ltiClientSecret = ltiClientSecret;
         this.jwkSetService = jwkSetService;
+        this.systemProperties = systemProperties;
         this.ltiIdTokenValidator = new IDTokenValidator(
                 issuer,
                 this.ltiClientId,
@@ -111,7 +103,6 @@ public class LTIService {
         HttpSession session = httpRequest.getSession(true);
         // TODO: make multi-tab-safe (session shared between tabs)
         session.setAttribute(SESSION_ATTRIBUTE_NONCE, nonce);
-
         URI redirectURI = new DefaultUriBuilderFactory()
                 .builder()
                 .scheme(this.oauthOidcInitUri.getScheme())
@@ -204,6 +195,15 @@ public class LTIService {
             JWT deepLinkingRequestToken = (JWT) session.getAttribute(SESSION_ATTRIBUTE_JWT);
             Map<String,Object> deepLinkingClaims = (Map) deepLinkingRequestToken.getJWTClaimsSet().getClaim("https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings");
             return UrlBuilder.parse((String) deepLinkingClaims.get("deep_link_return_url")).toUrl();
+        }
+        catch(Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    public URL configuredDeepLinkingResponseURL() {
+        try {
+            return UrlBuilder.parse(this.systemProperties.deeplinkingResponseURL()).toUrl();
         }
         catch(Exception e){
             throw new RuntimeException(e);
