@@ -40,7 +40,7 @@ public class LoginController {
     }
 
     @GetMapping(value = LTI_LOGIN_PATH)
-    public ResponseEntity<String> login(@RequestParam("iss") Issuer iss,
+    public String login(@RequestParam("iss") Issuer iss,
                         @RequestParam("target_link_uri") URI targetLinkUri,
                         @RequestParam("client_id") ClientID clientId,
                         @RequestParam("login_hint") String loginHint,
@@ -49,6 +49,7 @@ public class LoginController {
                         Model model) {
 
         logger.info("LTI login with client id [{}]", clientId);
+        /*
         if (this.localProperties.enabled() ) {
             URI redirectURI = new DefaultUriBuilderFactory()
                     .builder()
@@ -72,7 +73,8 @@ public class LoginController {
             headers.add("Location", redirect.toString());
             return new ResponseEntity<>(headers, HttpStatus.TEMPORARY_REDIRECT);
         }
-
+        */
+        return "lti/login.html";
     }
 
     @GetMapping(value = LTI_LOGIN_PATH_LOCAL)
