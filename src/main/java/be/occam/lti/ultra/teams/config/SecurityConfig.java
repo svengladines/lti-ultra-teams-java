@@ -27,6 +27,7 @@ public class SecurityConfig {
 
             .authorizeHttpRequests(authz -> authz.requestMatchers("/error").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/favicon.ico").permitAll())
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/javascript/*").permitAll())
 
             .authorizeHttpRequests(authz -> authz.requestMatchers("/ltiLogin").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/ltiLoginLocal").permitAll())
