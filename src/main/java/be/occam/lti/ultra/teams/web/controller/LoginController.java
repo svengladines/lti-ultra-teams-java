@@ -1,6 +1,7 @@
 package be.occam.lti.ultra.teams.web.controller;
 
 import be.occam.lti.ultra.teams.config.feature.LocalProperties;
+import be.occam.lti.ultra.teams.domain.LTILoginData;
 import be.occam.lti.ultra.teams.domain.service.LTIService;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
@@ -74,6 +75,10 @@ public class LoginController {
             return new ResponseEntity<>(headers, HttpStatus.TEMPORARY_REDIRECT);
         }
         */
+        LTILoginData ltiLoginData = ltiService.thirdPartyLogin(iss, targetLinkUri, clientId, loginHint, lti_message_hint, httpRequest);
+        model.addAttribute("state", ltiLoginData.state());
+        model.addAttribute("nonce", ltiLoginData.nonce());
+        model.addAttribute("redirect", ltiLoginData.redirectUri().toString());
         return "lti/login.html";
     }
 
@@ -85,9 +90,9 @@ public class LoginController {
                         @RequestParam("lti_message_hint") String lti_message_hint,
                         HttpServletRequest httpRequest,
                         Model model) {
-        URI redirect = ltiService.thirdPartyLogin(iss, targetLinkUri, clientId, loginHint, lti_message_hint, httpRequest);
+        LTILoginData ltiLoginData = ltiService.thirdPartyLogin(iss, targetLinkUri, clientId, loginHint, lti_message_hint, httpRequest);
         MultiValueMap<String,String> headers = new HttpHeaders();
-        headers.add("Location", redirect.toString());
+        headers.add("Location", ltiLoginData.redirectUri().toString());
         return new ResponseEntity<>(headers, HttpStatus.TEMPORARY_REDIRECT);
     }
 
