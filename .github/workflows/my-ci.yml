@@ -6,7 +6,7 @@ name: My C/I
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "feature-cookieless-lti" ]
   pull_request:
     branches: [ "master" ]
 
