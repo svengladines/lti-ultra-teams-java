@@ -2,6 +2,7 @@ package be.occam.lti.ultra.teams.domain.service;
 
 import be.occam.lti.ultra.teams.config.SystemProperties;
 import be.occam.lti.ultra.teams.domain.LTIContentItem;
+import be.occam.lti.ultra.teams.domain.LTILoginData;
 import be.occam.lti.ultra.teams.domain.LTIUser;
 import com.azure.core.util.UrlBuilder;
 import com.nimbusds.jose.*;
@@ -79,7 +80,7 @@ public class LTIService {
         );;
     }
 
-    public URI thirdPartyLogin(
+    public LTILoginData thirdPartyLogin(
             Issuer issuer,
             URI redirectUri,
             ClientID clientId,
@@ -100,6 +101,7 @@ public class LTIService {
         }
 
         String nonce = UUID.randomUUID().toString().replace("-","");
+        String state = UUID.randomUUID().toString().replace("-","");
         HttpSession session = httpRequest.getSession(true);
         // TODO: make multi-tab-safe (session shared between tabs)
         session.setAttribute(SESSION_ATTRIBUTE_NONCE, nonce);
@@ -117,11 +119,12 @@ public class LTIService {
                 .queryParam("lti_message_hint", ltiMessageHint)
                 .queryParam("response_mode", "form_post")
                 .queryParam("nonce", nonce)
+                .queryParam("state", state)
                 .queryParam("prompt", "none")
                 .build();
 
         logger.info("redirect uri = [{}]", redirectURI.toString());
-        return redirectURI;
+        return new LTILoginData(state,nonce,redirectURI);
     }
 
     public LTIUser authenticated(String idTokenString, String stateString, HttpServletRequest httpRequest) {
