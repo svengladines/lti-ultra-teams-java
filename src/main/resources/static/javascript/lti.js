@@ -31,7 +31,6 @@ function onPostMessageReceived(evt) {
               let frameName = msg.frame;
               let targetFrame = frameName === "_parent" ? parent : parent.frames[frameName];
               let messageId = uniqueMessageId();
-
               sendStoreDataRequest(targetFrame,evt.origin,messageId,'state',state);
               sendStoreDataRequest(targetFrame,evt.origin,messageId,'nonce',nonce);
           }
@@ -40,7 +39,9 @@ function onPostMessageReceived(evt) {
     else if (evt.data.subject === 'lti.put_data.response') {
         console.log('put_data_response');
         // TODO, check for error or ok
-        document.getElementById('redirectForm').submit();
+        // document.getElementById('redirectForm').submit();
+        let frame-name='lti-launch-iframe';
+        let targetFrame = parent.frames[frameName].location.href= document.getElementById('redirectForm').attr('action');
     }
 
 }
