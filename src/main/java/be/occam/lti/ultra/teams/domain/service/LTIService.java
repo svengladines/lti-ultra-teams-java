@@ -101,10 +101,12 @@ public class LTIService {
         }
 
         String nonce = UUID.randomUUID().toString().replace("-","");
-        String state = UUID.randomUUID().toString().replace("-","");
+        String state = nonce;
+        /* cookieless
         HttpSession session = httpRequest.getSession(true);
         // TODO: make multi-tab-safe (session shared between tabs)
         session.setAttribute(SESSION_ATTRIBUTE_NONCE, nonce);
+         */
         URI redirectURI = new DefaultUriBuilderFactory()
                 .builder()
                 .scheme(this.oauthOidcInitUri.getScheme())
@@ -152,6 +154,39 @@ public class LTIService {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
             session.setAttribute(SESSION_ATTRIBUTE_JWT,idToken);
+            return ltiUser;
+        }
+        catch(Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    public LTIUser authenticated(String idTokenString, String state) {
+        try {
+            JWT idToken = JWTParser.parse(idTokenString);
+            //State state = State.parse(stateString);
+            // TODO: make multi-tab-safe (session shared between tabs, should use unique attribute name)
+            /*
+            String nonce = (String) session.getAttribute(SESSION_ATTRIBUTE_NONCE);
+            logger.info("nonce stored in session with id [{}]: [{}]", session.getId(), nonce);
+             */
+            // TODO, state = nonce is probably not too safe, think about it ... hash/sign it perhaps ?
+            JWTClaimsSet jwtClaims = this.validateToken(idToken,new Nonce(state));
+            Map<String, Object> claims = jwtClaims.getClaims();
+            Map<String,Object> lisClaims = (Map) claims.get("https://purl.imsglobal.org/spec/lti/claim/lis");
+            logger.info("lis claim is [{}]", lisClaims);
+            String userId = (String) lisClaims.get("person_sourcedid");
+            String email = (String) claims.get("email");
+            String oneTimeSessionId = (String) claims.get("https://blackboard.com/lti/claim/one_time_session_token");
+            LTIUser ltiUser = new LTIUser(new Subject(userId), new TypelessToken(oneTimeSessionId), email);
+            PreAuthenticatedAuthenticationToken authentication = new PreAuthenticatedAuthenticationToken(userId, oneTimeSessionId);
+            authentication.setAuthenticated(true);
+            authentication.setDetails(ltiUser);
+            /*
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
+            session.setAttribute(SESSION_ATTRIBUTE_JWT,idToken);
+             */
             return ltiUser;
         }
         catch(Exception e){

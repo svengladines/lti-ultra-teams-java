@@ -33,6 +33,12 @@ public class MeetingService {
         return meeting;
     }
 
+    public TeamsMeeting create(String organizerEmail, String subject, HttpServletRequest httpServletRequest) {
+        TeamsMeeting meeting = onlineToTeamsMeeting(this.graphClient.createMeeting(organizerEmail, subject));
+        meeting.url(meetingURL(meeting));
+        return meeting;
+    }
+
     public TeamsMeeting get(String id) {
         return null;
     }

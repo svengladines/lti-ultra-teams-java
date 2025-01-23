@@ -54,12 +54,13 @@ public class MeetingController {
     }
 
     @PostMapping(value = LAUNCH_PATH)
-    public ResponseEntity<String> launch(
+    public String launch(
             @RequestParam("id_token") String idToken,
             @RequestParam("state") String state,
             HttpServletRequest httpRequest,
             Model model
     ) {
+        /*
         if (this.localProperties.enabled()) {
             URI redirectURI = new DefaultUriBuilderFactory()
                     .builder()
@@ -73,12 +74,19 @@ public class MeetingController {
             return new ResponseEntity<>(headers, HttpStatus.TEMPORARY_REDIRECT);
         }
         else {
-            LTIUser ltiUser = this.ltiService.authenticated(idToken, state,httpRequest);
-            logger.info("User [{}] with email [{}] logged in via LTI", ltiUser.userId(), ltiUser.email());
+         */
+            LTIUser ltiUser = this.ltiService.authenticated(idToken, state);
+            logger.info("User [{}] with email [{}] logged in via cookieless LTI", ltiUser.userId(), ltiUser.email());
+            /*
             MultiValueMap<String,String> headers = new HttpHeaders();
             headers.add("Location", "/pages/meeting/create");
             return new ResponseEntity<>(headers, HttpStatus.FOUND);
+             */
+            model.addAttribute("userEmail", ltiUser.email());
+            return "meeting/create";
+            /*
         }
+        */
     }
 
     @PostMapping(value = LAUNCH_PATH_LOCAL)
@@ -104,46 +112,21 @@ public class MeetingController {
     }
 
     @PostMapping(value = RESOURCE_PATH, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity<String> post(
+    public String postForm(
             @ModelAttribute MeetingDTO meetingDTO,
-            PreAuthenticatedAuthenticationToken user,
             HttpServletRequest httpRequest,
             Model model) {
-
-        // verify LTI claims, etc.
-        LTIUser ltiUser = (LTIUser) user.getDetails();
-        String subject = meetingDTO.getSubject();
-        TeamsMeeting teamsMeeting = this.meetingService.create(ltiUser, subject, httpRequest);
-        JWT jwt = this.ltiService.deepLinkingResponseToken(subject,teamsMeeting.url(),httpRequest);
-        // now redirect to page that contains self-posting form, via iframe
-        // first build url to self-posting form
         try {
-            URL urlToForm = UrlBuilder
-                    .parse(this.systemProperties.baseURL())
-                    .setPath(PATH_CREATED)
-                    .addQueryParameter("fiz", URLEncoder.encode(jwt.serialize(), Charset.defaultCharset()))
-                    .toUrl();
-            logger.info("url to self submitting form: [{}]", urlToForm);
-            URL redirectURI = UrlBuilder
-                    .parse(this.systemProperties.frameURL())
-                    .addQueryParameter("toolHref", UriComponentsBuilder.fromUriString(urlToForm.toString()).build().encode().toString())
-                    .toUrl();
-            MultiValueMap<String,String> headers = new HttpHeaders();
-            headers.add("Location", redirectURI.toString());
-            return new ResponseEntity<>(headers, HttpStatus.FOUND);
+            String subject = meetingDTO.getSubject();
+            TeamsMeeting teamsMeeting = this.meetingService.create(meetingDTO.getUserEmail(), subject, httpRequest);
+            JWT jwt = this.ltiService.deepLinkingResponseToken(subject,teamsMeeting.url(),httpRequest);
+            model.addAttribute("jwt", jwt);
+            // TODO, remove hardcoded, use value from launch request
+            model.addAttribute("responseUrl", "https://ultra.t.edu.kuleuven.cloud/webapps/blackboard/controller/lti/v2/deeplinking");
+            return "lti/deeplinking-response";
         }
         catch(Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @GetMapping(value = PATH_CREATED)
-    public String created(
-            @RequestParam String fiz,
-            HttpServletRequest httpRequest,
-            Model model) {
-        model.addAttribute("responseUrl", this.systemProperties.deeplinkURL());
-        model.addAttribute("jwt", fiz);
-        return "lti/deeplinking-meeting-created";
     }
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
 
     <meta charset="UTF-8">
@@ -11,6 +11,9 @@
 
 <body>
 
+    <form id="redirectForm" method="GET" th:action="@{redirect}">
+    </form>
+
 </div>
 
 </body>
@@ -18,7 +21,6 @@
 <script>
     var state = "[[${state}]]";
     var nonce = "[[${nonce}]]";
-    var redirect = "[[${redirect}]]";
     initialize();
 </script>
 
