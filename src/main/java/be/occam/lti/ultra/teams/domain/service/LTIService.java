@@ -227,7 +227,7 @@ public class LTIService {
                         new LTIContentItem("ltiResourceLink", title, url)
                     ))
                     .build();
-            logger.info("built deeplinking response jwt with claims", jwtClaimsSet.toJSONObject());
+            logger.info("built deeplinking response jwt with claims {}", jwtClaimsSet.toJSONObject());
             SignedJWT deepLinkingResponseToken =  new SignedJWT(header,jwtClaimsSet);
             JWSSigner signer = new RSASSASigner(this.jwkSetService.privateKey());
             try {
