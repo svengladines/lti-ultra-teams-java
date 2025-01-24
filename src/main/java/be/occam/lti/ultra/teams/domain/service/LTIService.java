@@ -201,19 +201,33 @@ public class LTIService {
                     .Builder(JWSAlgorithm.RS256)
                     .type(JOSEObjectType.JWT)
                     .build();
+
+            // data we need from the request token
+            String requestDeploymentId = (String) requestToken.getJWTClaimsSet().getClaim("https://purl.imsglobal.org/spec/lti/claim/deployment_id");
+            String requestIssuer = requestToken.getJWTClaimsSet().getIssuer();
+            String requestAudience = requestToken.getJWTClaimsSet().getAudience().get(0);
+            Map<String,Object> deeplinkSettings = (Map) requestToken.getJWTClaimsSet().getClaim("https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings");
+            String requestData = (String) deeplinkSettings.get("data");
+
             JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                    .issuer(requestToken.getJWTClaimsSet().getIssuer())
-                    .audience(requestToken.getJWTClaimsSet().getAudience())
+                    // issuer = requestToken.audience
+                    .issuer(requestAudience)
+                    // audience = requestToken.issuer
+                    .audience(requestIssuer)
                     .expirationTime(new Date(Instant.now().plus(Duration.ofMinutes(5L)).toEpochMilli()))
-                    .issueTime(new Date(Instant.now().plus(Duration.ofMinutes(5L)).toEpochMilli()))
-                    .claim("nonce",requestToken.getJWTClaimsSet().getClaim("nonce"))
-                    .claim("https://purl.imsglobal.org/spec/lti/claim/deployment_id", requestToken.getJWTClaimsSet().getClaim("https://purl.imsglobal.org/spec/lti/claim/deployment_id"))
+                    .issueTime(new Date(Instant.now().toEpochMilli()))
+                    // nonce = uuid
+                    .claim("nonce", UUID.randomUUID().toString().replace("-",""))
+                    // deployment id = requestToken.deployment_id
+                    .claim("https://purl.imsglobal.org/spec/lti/claim/deployment_id", requestDeploymentId )
+                    .claim("https://purl.imsglobal.org/spec/lti-dl/claim/data",requestData)
                     .claim("https://purl.imsglobal.org/spec/lti/claim/message_type","LtiDeepLinkingResponse")
                     .claim("https://purl.imsglobal.org/spec/lti/claim/version","1.3.0")
                     .claim("https://purl.imsglobal.org/spec/lti-dl/claim/content_items", List.of(
                         new LTIContentItem("ltiResourceLink", title, url)
                     ))
                     .build();
+            logger.info("built deeplinking response jwt with claims", jwtClaimsSet.toJSONObject());
             SignedJWT deepLinkingResponseToken =  new SignedJWT(header,jwtClaimsSet);
             JWSSigner signer = new RSASSASigner(this.jwkSetService.privateKey());
             try {
