@@ -40,8 +40,9 @@ function onPostMessageReceived(evt) {
         console.log('put_data_response');
         // TODO, check for error or ok
         // document.getElementById('redirectForm').submit();
-        let frame-name='lti-launch-iframe';
-        let targetFrame = parent.frames[frameName].location.href= document.getElementById('redirectForm').attr('action');
+        let frameName='lti-launch-iframe';
+        let action = document.getElementById('redirectForm').attributes['action'];
+        parent.frames[frameName].location.href = action.value;
     }
 
 }
