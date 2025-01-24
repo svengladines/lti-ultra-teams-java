@@ -1,5 +1,6 @@
 package be.occam.lti.ultra.teams.web.controller;
 
+import be.occam.lti.ultra.teams.config.SystemProperties;
 import be.occam.lti.ultra.teams.config.feature.LocalProperties;
 import be.occam.lti.ultra.teams.domain.LTILoginData;
 import be.occam.lti.ultra.teams.domain.service.LTIService;
@@ -33,11 +34,13 @@ public class LoginController {
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final LTIService ltiService;
     protected final LocalProperties localProperties;
+    protected final SystemProperties systemProperties;
 
     @Autowired
-    public LoginController(LTIService ltiService, LocalProperties localProperties) {
+    public LoginController(LTIService ltiService, LocalProperties localProperties, SystemProperties systemProperties) {
         this.ltiService = ltiService;
         this.localProperties = localProperties;
+        this.systemProperties = systemProperties;
     }
 
     @GetMapping(value = LTI_LOGIN_PATH)
@@ -79,6 +82,7 @@ public class LoginController {
         model.addAttribute("state", ltiLoginData.state());
         model.addAttribute("nonce", ltiLoginData.nonce());
         model.addAttribute("redirect", ltiLoginData.redirectUri().toString());
+        model.addAttribute("ultraURL", this.systemProperties.ultraURL());
         return "lti/login.html";
     }
 

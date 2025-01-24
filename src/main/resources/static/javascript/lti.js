@@ -16,7 +16,7 @@ function initialize() {
 function onPostMessageReceived(evt) {
 
     // Determine whether we trust the origin of the message (ultra). */
-    const fromTrustedHost = (evt.origin === 'https://ultra.t.edu.kuleuven.cloud') || (evt.origin === 'https://developer.blackboard.com');
+    const fromTrustedHost = (evt.origin === ultraUrl) || (evt.origin === 'https://developer.blackboard.com');
 
     if (!fromTrustedHost) {
         console.log('[lti] message from untrusted origin:' + evt.origin);
