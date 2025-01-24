@@ -200,6 +200,7 @@ public class LTIService {
             JWSHeader header = new JWSHeader
                     .Builder(JWSAlgorithm.RS256)
                     .type(JOSEObjectType.JWT)
+                    .keyID(this.systemProperties.jwkId())
                     .build();
 
             // data we need from the request token
