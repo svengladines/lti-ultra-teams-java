@@ -83,7 +83,7 @@ public class MeetingController {
             return new ResponseEntity<>(headers, HttpStatus.FOUND);
              */
             model.addAttribute("userEmail", ltiUser.email());
-            model.addAttribute("jwt", ltiUser.jwt());
+            model.addAttribute("jwt", ltiUser.jwt().serialize());
             return "meeting/create";
             /*
         }
@@ -121,7 +121,7 @@ public class MeetingController {
             String subject = meetingDTO.getSubject();
             TeamsMeeting teamsMeeting = this.meetingService.create(meetingDTO.getUserEmail(), subject, httpRequest);
             JWT jwt = this.ltiService.deepLinkingResponseToken(subject,teamsMeeting.url(),meetingDTO.getJwt());
-            model.addAttribute("jwt", jwt);
+            model.addAttribute("jwt", jwt.serialize());
             // TODO, remove hardcoded, use value from launch request
             model.addAttribute("responseUrl", "https://ultra.t.edu.kuleuven.cloud/webapps/blackboard/controller/lti/v2/deeplinking");
             return "lti/deeplinking-response";

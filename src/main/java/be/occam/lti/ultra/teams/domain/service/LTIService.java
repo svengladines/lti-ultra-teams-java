@@ -147,7 +147,7 @@ public class LTIService {
             String userId = (String) lisClaims.get("person_sourcedid");
             String email = (String) claims.get("email");
             String oneTimeSessionId = (String) claims.get("https://blackboard.com/lti/claim/one_time_session_token");
-            LTIUser ltiUser = new LTIUser(new Subject(userId), new TypelessToken(oneTimeSessionId), email, idToken.serialize());
+            LTIUser ltiUser = new LTIUser(new Subject(userId), new TypelessToken(oneTimeSessionId), email, idToken);
             PreAuthenticatedAuthenticationToken authentication = new PreAuthenticatedAuthenticationToken(userId, oneTimeSessionId);
             authentication.setAuthenticated(true);
             authentication.setDetails(ltiUser);
@@ -178,7 +178,7 @@ public class LTIService {
             String userId = (String) lisClaims.get("person_sourcedid");
             String email = (String) claims.get("email");
             String oneTimeSessionId = (String) claims.get("https://blackboard.com/lti/claim/one_time_session_token");
-            LTIUser ltiUser = new LTIUser(new Subject(userId), new TypelessToken(oneTimeSessionId), email, idToken.serialize());
+            LTIUser ltiUser = new LTIUser(new Subject(userId), new TypelessToken(oneTimeSessionId), email, idToken);
             /*
             PreAuthenticatedAuthenticationToken authentication = new PreAuthenticatedAuthenticationToken(userId, oneTimeSessionId);
             authentication.setAuthenticated(true);
