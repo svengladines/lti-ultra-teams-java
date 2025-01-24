@@ -8,7 +8,7 @@ public record SystemProperties(
         String frameURL,
         String ultraURL,
         String deeplinkURL,
-        String jwkID,
+        String jwkId,
         String jwkPublic,
         String jwkPrivate
         ) {

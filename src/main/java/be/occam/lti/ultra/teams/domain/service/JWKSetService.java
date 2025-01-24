@@ -5,8 +5,6 @@ import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.KeyUse;
 import com.nimbusds.jose.jwk.RSAKey;
-import com.nimbusds.jose.util.StandardCharset;
-import io.netty.handler.ssl.PemPrivateKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -16,7 +14,6 @@ import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
@@ -47,10 +44,11 @@ public class JWKSetService {
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             RSAPublicKey publicKey = (RSAPublicKey) keyFactory.generatePublic(publicKeySpec);
 
-            logger.info("public key id property is {}", systemProperties.jwkID());
+            logger.info("key id system property is {}", systemProperties.jwkId());
+            logger.info("public key system property is {}", systemProperties.jwkPublic());
 
             RSAKey key = new RSAKey.Builder(publicKey)
-                    .keyID(systemProperties.jwkID())
+                    .keyID(systemProperties.jwkId())
                     .keyUse(KeyUse.SIGNATURE)
                     .algorithm(JWSAlgorithm.RS256)
                     .build();
