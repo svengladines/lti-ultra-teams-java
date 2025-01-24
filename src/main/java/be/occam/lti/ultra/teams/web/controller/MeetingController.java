@@ -123,7 +123,7 @@ public class MeetingController {
             JWT jwt = this.ltiService.deepLinkingResponseToken(subject,teamsMeeting.url(),meetingDTO.getJwt());
             model.addAttribute("jwt", jwt.serialize());
             // TODO, remove hardcoded, use value from launch request
-            model.addAttribute("responseUrl", "https://ultra.t.edu.kuleuven.cloud/webapps/blackboard/controller/lti/v2/deeplinking");
+            model.addAttribute("responseUrl", "%s/webapps/blackboard/controller/lti/v2/deeplinking".formatted(this.systemProperties.ultraURL()));
             return "lti/deeplinking-response";
         }
         catch(Exception e) {
