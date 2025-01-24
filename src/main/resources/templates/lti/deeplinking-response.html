@@ -7,7 +7,7 @@
 <body>
 
     <form id="deeplinking-response-form" method="POST" th:action="${responseUrl}">
-        <input type="hidden" th:value="${jwt}">
+        <input name="JWT" type="hidden" th:value="${jwt}">
         <input type="submit">
     </form>
 
