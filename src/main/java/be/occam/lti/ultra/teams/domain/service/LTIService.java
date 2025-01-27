@@ -203,6 +203,8 @@ public class LTIService {
                     .keyID(this.systemProperties.jwkId())
                     .build();
 
+            logger.info("create deeplinking response token for meeting with url [{}]", url.toString());
+
             // data we need from the request token
             String requestDeploymentId = (String) requestToken.getJWTClaimsSet().getClaim("https://purl.imsglobal.org/spec/lti/claim/deployment_id");
             String requestIssuer = requestToken.getJWTClaimsSet().getIssuer();

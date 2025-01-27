@@ -36,7 +36,7 @@ public class MeetingService {
         meeting.ifPresent(m -> {
             m.organizer(organizerEmail);
             m.url(meetingURL(m));
-            logger.info("User [{}]; ... teams meeting created with  id [{}], subject [{}] and  join url [{}]", organizerEmail, m.id(), m.subject(), m.joinURL());
+            logger.info("User [{}]; ... teams meeting created with  id [{}], subject [{}] and join url [{}]", organizerEmail, m.id(), m.subject(), m.joinURL());
         });
         return meeting;
     }
