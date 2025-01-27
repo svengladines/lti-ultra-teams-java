@@ -59,7 +59,7 @@ public class MeetingService {
 
     protected URL meetingURL(TeamsMeeting teamsMeeting) {
         try {
-            return UrlBuilder.parse("%s/api/meetings/%s/%s.html"
+            return UrlBuilder.parse("%s/meeting/%s/%s.html"
                     .formatted(this.systemProperties.baseURL(), teamsMeeting.organizer(), teamsMeeting.id())).toUrl();
             // joinURL is interpreted as link to Teams Classes.... return UrlBuilder.parse(teamsMeeting.joinURL()).toUrl();
         }

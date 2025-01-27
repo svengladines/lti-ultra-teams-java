@@ -30,11 +30,10 @@ import java.util.Optional;
 public class MeetingController {
 
     public static final String LAUNCH_PATH = "/meeting";
-    public static final String LAUNCH_PATH_LOCAL = "/meetingLocal";
+    public static final String LAUNCH_RESOURCE_LINK_PATH = "/meeting/{organizer}/{id}";
 
     public static final String RESOURCE_COLLECTION_PATH = "/api/meetings";
     public static final String RESOURCE_SINGLE_PATH = "/api/meetings/{id}";
-    public static final String RESOURCE_SINGLE_VIEW_PATH = "/api/meetings/{organizer}/{id}.html";
 
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final LTIService ltiService;
@@ -65,10 +64,27 @@ public class MeetingController {
             model.addAttribute("jwt", ltiUser.jwt().serialize());
             return "meeting/create";
         }
-        else if (launchType.equals(LTILaunchType.RESOURCE_LINK_REQUEST)) {
-            String redirect = (String) claims.get("https://purl.imsglobal.org/spec/lti/claim/target_link_uri");
-            // TODO: strip host to have internal redirect instead of roundtrip ... no spoofing then...
-            return "redirect:%s".formatted(redirect);
+        else {
+            throw new RuntimeException("invalid message type");
+        }
+    }
+
+    @PostMapping(value = LAUNCH_RESOURCE_LINK_PATH)
+    public String launchResourceLink(
+            @RequestParam("id_token") String idToken,
+            @RequestParam("state") String state,
+            @PathVariable("organizer") String organizer,
+            @PathVariable("id") String id,
+            Model model) {
+        Map<String,Object> claims = new HashMap<>();
+        LTIUser ltiUser = this.ltiService.authenticated(idToken, state,claims);
+        logger.info("User [{}] with email [{}] logged in via cookieless LTI", ltiUser.userId(), ltiUser.email());
+        LTILaunchType launchType = this.ltiService.launchType(claims);
+        if (launchType.equals(LTILaunchType.RESOURCE_LINK_REQUEST)) {
+            this.meetingService.get(organizer,id).ifPresent(m -> {
+                model.addAttribute("meeting", map(m));
+            });
+            return "meeting/view";
         }
         else {
             throw new RuntimeException("invalid message type");
@@ -91,6 +107,7 @@ public class MeetingController {
 
     }
 
+    /*
     @GetMapping(value = RESOURCE_SINGLE_VIEW_PATH, produces = MediaType.TEXT_HTML_VALUE)
     public String view(
             @PathVariable("organizer") String organizer,
@@ -101,6 +118,7 @@ public class MeetingController {
             });
         return "meeting/view";
     }
+     */
 
     @PostMapping(value = RESOURCE_COLLECTION_PATH, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public String postForm(
