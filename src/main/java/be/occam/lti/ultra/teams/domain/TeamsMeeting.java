@@ -5,6 +5,7 @@ import java.net.URL;
 public class TeamsMeeting {
 
     protected String id;
+    protected String organizer;
     protected String subject;
     protected String joinURL;
     protected URL url;
@@ -33,6 +34,15 @@ public class TeamsMeeting {
 
     public TeamsMeeting subject(String subject) {
         this.subject = subject;
+        return this;
+    }
+
+    public String organizer() {
+        return organizer;
+    }
+
+    public TeamsMeeting organizer(String organizer) {
+        this.organizer = organizer;
         return this;
     }
 

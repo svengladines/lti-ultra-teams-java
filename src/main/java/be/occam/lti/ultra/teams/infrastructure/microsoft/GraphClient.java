@@ -30,12 +30,20 @@ public class GraphClient {
         lobbyBypassSettings.setScope(LobbyBypassScope.Invited);
         onlineMeeting.setLobbyBypassSettings(lobbyBypassSettings);
         User user = this.graphServiceClient.usersWithUserPrincipalName(organizer).get();
-
         OnlineMeeting createdMeeting = this.graphServiceClient.users().byUserId(user.getId())
                 .onlineMeetings()
                 .post(onlineMeeting);
         log.info("User [{}]; created online meeting [{}]", user.getId(), createdMeeting);
         return createdMeeting;
+    }
+
+    public OnlineMeeting getMeeting(String organizer, String id) {
+        User user = this.graphServiceClient.usersWithUserPrincipalName(organizer).get();
+        OnlineMeeting meeting = this.graphServiceClient.users().byUserId(user.getId())
+                .onlineMeetings()
+                .byOnlineMeetingId(id).get();
+        log.info("User [{}]; got online meeting with id [{}] and subject [{}]", user.getId(), meeting.getId(), meeting.getSubject() );
+        return meeting;
     }
 
 }

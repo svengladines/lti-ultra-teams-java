@@ -30,6 +30,7 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.util.Optional;
 
 @Controller
 public class MeetingController {
@@ -39,7 +40,7 @@ public class MeetingController {
 
     public static final String RESOURCE_COLLECTION_PATH = "/api/meetings";
     public static final String RESOURCE_SINGLE_PATH = "/api/meetings/{id}";
-    public static final String RESOURCE_SINGLE_VIEW_PATH = "/api/meetings/{id}.html";
+    public static final String RESOURCE_SINGLE_VIEW_PATH = "/api/meetings/{organizer}/{id}.html";
 
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final LTIService ltiService;
@@ -109,18 +110,27 @@ public class MeetingController {
     @GetMapping(value = RESOURCE_SINGLE_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public ResponseEntity<MeetingDTO> get(
+            @PathVariable("organizer") String organizer,
             @PathVariable("id") String id,
             Model model) {
-        TeamsMeeting meeting = this.meetingService.get(id);
-        return new ResponseEntity<>(map(meeting),HttpStatus.OK);
+        Optional<TeamsMeeting> oMeeting = this.meetingService.get(organizer,id);
+        if (oMeeting.isPresent()) {
+            return new ResponseEntity<>(map(oMeeting.get()), HttpStatus.OK);
+        }
+        else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
     }
 
     @GetMapping(value = RESOURCE_SINGLE_VIEW_PATH, produces = MediaType.TEXT_HTML_VALUE)
     public String view(
+            @PathVariable("organizer") String organizer,
             @PathVariable("id") String id,
             Model model) {
-        TeamsMeeting meeting = this.meetingService.get(id);
-        model.addAttribute("meeting", map(meeting));
+            this.meetingService.get(organizer,id).ifPresent(m -> {
+                model.addAttribute("meeting", map(m));
+            });
         return "/meeting/view";
     }
 
@@ -131,7 +141,7 @@ public class MeetingController {
             Model model) {
         try {
             String subject = meetingDTO.getSubject();
-            TeamsMeeting teamsMeeting = this.meetingService.create(meetingDTO.getUserEmail(), subject, httpRequest);
+            TeamsMeeting teamsMeeting = this.meetingService.create(meetingDTO.getUserEmail(), subject, httpRequest).orElseThrow(() -> new RuntimeException("could not create meeting"));
             JWT jwt = this.ltiService.deepLinkingResponseToken(subject,teamsMeeting.url(),meetingDTO.getJwt());
             model.addAttribute("jwt", jwt.serialize());
             // TODO, remove hardcoded, use value from launch request
