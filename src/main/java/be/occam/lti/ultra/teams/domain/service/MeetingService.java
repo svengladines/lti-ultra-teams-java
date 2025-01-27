@@ -42,7 +42,7 @@ public class MeetingService {
     }
 
     public Optional<TeamsMeeting> get(String organizer, String id) {
-        return map(this.graphClient.getMeeting(organizer,id));
+        return map(this.graphClient.getMeeting(organizer,id)).map(m -> m.organizer(organizer));
     }
 
     protected Optional<TeamsMeeting> map(OnlineMeeting onlineMeeting) {

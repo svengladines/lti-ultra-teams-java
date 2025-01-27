@@ -2,6 +2,7 @@ package be.occam.lti.ultra.teams.web.controller;
 
 import be.occam.lti.ultra.teams.config.SystemProperties;
 import be.occam.lti.ultra.teams.config.feature.LocalProperties;
+import be.occam.lti.ultra.teams.domain.LTILaunchType;
 import be.occam.lti.ultra.teams.domain.LTIUser;
 import be.occam.lti.ultra.teams.domain.TeamsMeeting;
 import be.occam.lti.ultra.teams.domain.service.LTIService;
@@ -21,6 +22,8 @@ import org.springframework.ui.Model;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Controller
@@ -52,50 +55,24 @@ public class MeetingController {
             @RequestParam("id_token") String idToken,
             @RequestParam("state") String state,
             HttpServletRequest httpRequest,
-            Model model
-    ) {
-        /*
-        if (this.localProperties.enabled()) {
-            URI redirectURI = new DefaultUriBuilderFactory()
-                    .builder()
-                    .scheme("http")
-                    .host("localhost")
-                    .port(8080)
-                    .path(LAUNCH_PATH_LOCAL)
-                    .build();
-            MultiValueMap<String,String> headers = new HttpHeaders();
-            headers.add("Location", redirectURI.toString());
-            return new ResponseEntity<>(headers, HttpStatus.TEMPORARY_REDIRECT);
-        }
-        else {
-         */
-            LTIUser ltiUser = this.ltiService.authenticated(idToken, state);
-            logger.info("User [{}] with email [{}] logged in via cookieless LTI", ltiUser.userId(), ltiUser.email());
-            /*
-            MultiValueMap<String,String> headers = new HttpHeaders();
-            headers.add("Location", "/pages/meeting/create");
-            return new ResponseEntity<>(headers, HttpStatus.FOUND);
-             */
-            model.addAttribute("userEmail", ltiUser.email());
+            Model model) {
+        Map<String,Object> claims = new HashMap<>();
+        LTIUser ltiUser = this.ltiService.authenticated(idToken, state,claims);
+        logger.info("User [{}] with email [{}] logged in via cookieless LTI", ltiUser.userId(), ltiUser.email());
+        LTILaunchType launchType = this.ltiService.launchType(claims);
+        if (launchType.equals(LTILaunchType.DEEPLINKING_REQUEST)) {
+            model.addAttribute("organizer", ltiUser.email());
             model.addAttribute("jwt", ltiUser.jwt().serialize());
             return "meeting/create";
-            /*
         }
-        */
-    }
-
-    @PostMapping(value = LAUNCH_PATH_LOCAL)
-    public ResponseEntity<String> launchLocal(
-            @RequestParam("id_token") String idToken,
-            @RequestParam("state") String state,
-            HttpServletRequest httpRequest,
-            Model model) {
-        // verify LTI claims, etc.
-        LTIUser ltiUser = this.ltiService.authenticated(idToken, state,httpRequest);
-        logger.info("User [{}] with email [{}] logged in via LTI", ltiUser.userId(), ltiUser.email());
-        MultiValueMap<String,String> headers = new HttpHeaders();
-        headers.add("Location", "/pages/meeting/create");
-        return new ResponseEntity<>(headers, HttpStatus.FOUND);
+        else if (launchType.equals(LTILaunchType.RESOURCE_LINK_REQUEST)) {
+            String redirect = (String) claims.get("https://purl.imsglobal.org/spec/lti/claim/target_link_uri");
+            // TODO: strip host to have internal redirect instead of roundtrip ... no spoofing then...
+            return "redirect:%s".formatted(redirect);
+        }
+        else {
+            throw new RuntimeException("invalid message type");
+        }
     }
 
     @GetMapping(value = RESOURCE_SINGLE_PATH, produces = MediaType.APPLICATION_JSON_VALUE)

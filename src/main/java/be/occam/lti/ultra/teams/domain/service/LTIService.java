@@ -2,6 +2,7 @@ package be.occam.lti.ultra.teams.domain.service;
 
 import be.occam.lti.ultra.teams.config.SystemProperties;
 import be.occam.lti.ultra.teams.domain.LTIContentItem;
+import be.occam.lti.ultra.teams.domain.LTILaunchType;
 import be.occam.lti.ultra.teams.domain.LTILoginData;
 import be.occam.lti.ultra.teams.domain.LTIUser;
 import com.azure.core.util.UrlBuilder;
@@ -95,7 +96,7 @@ public class LTIService {
             logger.warn("Expected client id [{}], actual [{}]", ltiIdTokenValidator.getClientID(), clientId);
             throw new ResponseStatusException(BAD_REQUEST);
         }
-        else if (!Arrays.stream(this.redirects).anyMatch(r -> r.equals(redirectUri))) {
+        else if (!Arrays.stream(this.redirects).anyMatch(r -> redirectUri.toString().startsWith(r.toString()))) {
             logger.warn("Expected redirect uris {}, actual [{}]", this.redirects, redirectUri);
             throw new ResponseStatusException(BAD_REQUEST);
         }
@@ -129,6 +130,7 @@ public class LTIService {
         return new LTILoginData(state,nonce,redirectURI);
     }
 
+    /* with cookies
     public LTIUser authenticated(String idTokenString, String stateString, HttpServletRequest httpRequest) {
         try {
             JWT idToken = JWTParser.parse(idTokenString);
@@ -160,8 +162,9 @@ public class LTIService {
             throw new RuntimeException(e);
         }
     }
+     */
 
-    public LTIUser authenticated(String idTokenString, String state) {
+    public LTIUser authenticated(String idTokenString, String state, Map<String,Object> claims) {
         try {
             JWT idToken = JWTParser.parse(idTokenString);
             //State state = State.parse(stateString);
@@ -172,26 +175,27 @@ public class LTIService {
              */
             // TODO, state = nonce is probably not too safe, think about it ... hash/sign it perhaps ?
             JWTClaimsSet jwtClaims = this.validateToken(idToken,new Nonce(state));
-            Map<String, Object> claims = jwtClaims.getClaims();
+            claims.putAll(jwtClaims.getClaims());
             Map<String,Object> lisClaims = (Map) claims.get("https://purl.imsglobal.org/spec/lti/claim/lis");
             logger.info("lis claim is [{}]", lisClaims);
             String userId = (String) lisClaims.get("person_sourcedid");
             String email = (String) claims.get("email");
             String oneTimeSessionId = (String) claims.get("https://blackboard.com/lti/claim/one_time_session_token");
             LTIUser ltiUser = new LTIUser(new Subject(userId), new TypelessToken(oneTimeSessionId), email, idToken);
-            /*
-            PreAuthenticatedAuthenticationToken authentication = new PreAuthenticatedAuthenticationToken(userId, oneTimeSessionId);
-            authentication.setAuthenticated(true);
-            authentication.setDetails(ltiUser);
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
-            session.setAttribute(SESSION_ATTRIBUTE_JWT,idToken);
-             */
             return ltiUser;
         }
         catch(Exception e){
             throw new RuntimeException(e);
         }
+    }
+
+    public LTILaunchType launchType(Map<String,Object> claims ) {
+        final String messageType = (String) claims.get("https://purl.imsglobal.org/spec/lti/claim/message_type");
+        return switch(messageType) {
+            case "LtiDeepLinkingRequest" -> LTILaunchType.DEEPLINKING_REQUEST;
+            case "LtiResourceLinkRequest" -> LTILaunchType.RESOURCE_LINK_REQUEST;
+            default -> LTILaunchType.X;
+        };
     }
 
     public JWT deepLinkingResponseToken(String title, URL url, String jwt) {
@@ -227,8 +231,8 @@ public class LTIService {
                     .claim("https://purl.imsglobal.org/spec/lti/claim/message_type","LtiDeepLinkingResponse")
                     .claim("https://purl.imsglobal.org/spec/lti/claim/version","1.3.0")
                     .claim("https://purl.imsglobal.org/spec/lti-dl/claim/content_items", List.of(
-                        //new LTIContentItem("ltiResourceLink", title, url) // this redirects to LTI again...
-                        new LTIContentItem("link", title, url) // this redirects to the url...
+                        new LTIContentItem("ltiResourceLink", title, url) // this redirects to LTI again...
+                        // new LTIContentItem("link", title, url) // this redirects to the url...
                     ))
                     .build();
             logger.info("built deeplinking response jwt with claims {}", jwtClaimsSet.toJSONObject());
