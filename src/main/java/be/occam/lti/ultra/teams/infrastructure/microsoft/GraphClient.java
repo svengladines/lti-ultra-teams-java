@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Component
 public class GraphClient {
@@ -23,6 +24,7 @@ public class GraphClient {
     public OnlineMeeting createMeeting(String organizer, String subject) {
 
         OnlineMeeting onlineMeeting = new OnlineMeeting();
+        onlineMeeting.setExternalId(UUID.randomUUID().toString());
         onlineMeeting.setSubject(subject);
         onlineMeeting.setStartDateTime(OffsetDateTime.parse("2024-12-15T10:00:00Z"));
         LobbyBypassSettings lobbyBypassSettings = new LobbyBypassSettings();
