@@ -106,7 +106,7 @@ public class MeetingController {
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
-    @GetMapping(value = RESOURCE_SINGLE_VIEW_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value = RESOURCE_SINGLE_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public ResponseEntity<MeetingDTO> get(
             @PathVariable("id") String id,
@@ -145,6 +145,7 @@ public class MeetingController {
 
     protected static MeetingDTO map(TeamsMeeting from) {
         MeetingDTO to = new MeetingDTO();
+        to.setId(from.id());
         to.setSubject(from.subject());
         to.setJoinUrl(from.joinURL());
         return to;

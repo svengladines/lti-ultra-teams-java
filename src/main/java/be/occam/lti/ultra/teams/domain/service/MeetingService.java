@@ -34,7 +34,7 @@ public class MeetingService {
         logger.info("User [{}]; create teams meeting with subject [{}]...", organizerEmail, subject);
         TeamsMeeting meeting = onlineToTeamsMeeting(this.graphClient.createMeeting(organizerEmail, subject));
         meeting.url(meetingURL(meeting));
-        logger.info("User [{}]; ... teams meeting with subject [{}] created", organizerEmail, subject);
+        logger.info("User [{}]; ... teams meeting created with  id [{}], subject [{}] and  join url [{}]", organizerEmail, meeting.id(), meeting.subject(), meeting.joinURL());
         return meeting;
     }
 
@@ -51,7 +51,7 @@ public class MeetingService {
 
     protected URL meetingURL(TeamsMeeting teamsMeeting) {
         try {
-            return UrlBuilder.parse("%s/pages/meeting/%s.html"
+            return UrlBuilder.parse("%s/api/meetings/%s.html"
                     .formatted(this.systemProperties.baseURL(), teamsMeeting.id())).toUrl();
             // joinURL is interpreted as link to Teams Classes.... return UrlBuilder.parse(teamsMeeting.joinURL()).toUrl();
         }

@@ -1,6 +1,7 @@
 package be.occam.lti.ultra.teams.web.dto;
 
 public class MeetingDTO {
+    protected  String id;
     protected String subject;
     protected String userEmail;
     protected String joinUrl;
@@ -39,6 +40,15 @@ public class MeetingDTO {
 
     public MeetingDTO setJoinUrl(String joinUrl) {
         this.joinUrl = joinUrl;
+        return this;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public MeetingDTO setId(String id) {
+        this.id = id;
         return this;
     }
 }
