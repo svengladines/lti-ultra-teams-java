@@ -44,7 +44,7 @@ public class MeetingService {
 
     protected TeamsMeeting onlineToTeamsMeeting(OnlineMeeting onlineMeeting) {
         return new TeamsMeeting()
-                .id(onlineMeeting.getExternalId())
+                .id(onlineMeeting.getId())
                 .joinURL(onlineMeeting.getJoinWebUrl())
                 .subject(onlineMeeting.getSubject());
     }
