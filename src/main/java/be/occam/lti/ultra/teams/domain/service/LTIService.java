@@ -225,7 +225,8 @@ public class LTIService {
                     .claim("https://purl.imsglobal.org/spec/lti/claim/message_type","LtiDeepLinkingResponse")
                     .claim("https://purl.imsglobal.org/spec/lti/claim/version","1.3.0")
                     .claim("https://purl.imsglobal.org/spec/lti-dl/claim/content_items", List.of(
-                        new LTIContentItem("ltiResourceLink", title, url)
+                        //new LTIContentItem("ltiResourceLink", title, url) // this redirects to LTI again...
+                        new LTIContentItem("link", title, url) // this redirects to the url...
                     ))
                     .build();
             logger.info("built deeplinking response jwt with claims {}", jwtClaimsSet.toJSONObject());
