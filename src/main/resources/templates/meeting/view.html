@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Teams meeting</title>
+</head>
+<body>
+
+    <table>
+        <tr>
+            <th>Onderwerp</th>
+            <td th:text="${meeting.subject}"></td>
+        </tr>
+        <tr>
+            <th>Aangemaakt door</th>
+            <td>...</td>
+        </tr>
+        <tr>
+            <th>Deelnemen</th>
+            <td><a th:href="@{meeting.joinUrl}" targ="_blank">Deelnemen kan via deze link</a></td>
+        </tr>
+    </table>
+</body>
+</html>

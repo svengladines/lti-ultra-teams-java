@@ -24,7 +24,7 @@ import java.net.URI;
 @Controller
 public class PageController {
 
-    public static final String RESOURCE_PATH = "/pages/{area}/{page}";
+    public static final String RESOURCE_PATH = "/pages/{area}/{page}.html";
 
     protected final LTIService ltiService;
     protected final MeetingService meetingService;

@@ -36,8 +36,10 @@ public class MeetingController {
 
     public static final String LAUNCH_PATH = "/meeting";
     public static final String LAUNCH_PATH_LOCAL = "/meetingLocal";
-    public static final String PATH_CREATED = "/meeting/created";
-    public static final String RESOURCE_PATH = "/api/meetings";
+
+    public static final String RESOURCE_COLLECTION_PATH = "/api/meetings";
+    public static final String RESOURCE_SINGLE_PATH = "/api/meetings/{id}";
+    public static final String RESOURCE_SINGLE_VIEW_PATH = "/api/meetings/{id}.html";
 
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final LTIService ltiService;
@@ -104,15 +106,25 @@ public class MeetingController {
         return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 
-    @GetMapping(value = RESOURCE_PATH + "/{id}")
-    public String get(
+    @GetMapping(value = RESOURCE_SINGLE_VIEW_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ResponseEntity<MeetingDTO> get(
             @PathVariable("id") String id,
-            PreAuthenticatedAuthenticationToken user) {
+            Model model) {
         TeamsMeeting meeting = this.meetingService.get(id);
-        return "redirect:%s".formatted(meeting.joinURL());
+        return new ResponseEntity<>(map(meeting),HttpStatus.OK);
     }
 
-    @PostMapping(value = RESOURCE_PATH, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    @GetMapping(value = RESOURCE_SINGLE_VIEW_PATH, produces = MediaType.TEXT_HTML_VALUE)
+    public String view(
+            @PathVariable("id") String id,
+            Model model) {
+        TeamsMeeting meeting = this.meetingService.get(id);
+        model.addAttribute("meeting", map(meeting));
+        return "/meeting/view";
+    }
+
+    @PostMapping(value = RESOURCE_COLLECTION_PATH, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public String postForm(
             @ModelAttribute MeetingDTO meetingDTO,
             HttpServletRequest httpRequest,
@@ -129,5 +141,12 @@ public class MeetingController {
         catch(Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected static MeetingDTO map(TeamsMeeting from) {
+        MeetingDTO to = new MeetingDTO();
+        to.setSubject(from.subject());
+        to.setJoinUrl(from.joinURL());
+        return to;
     }
 }

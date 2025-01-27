@@ -7,6 +7,8 @@ import be.occam.lti.ultra.teams.infrastructure.microsoft.GraphClient;
 import com.azure.core.util.UrlBuilder;
 import com.microsoft.graph.models.OnlineMeeting;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +18,7 @@ import java.net.URL;
 @Service
 public class MeetingService {
 
+    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final GraphClient graphClient;
     protected final LTIService ltiService;
     protected final SystemProperties systemProperties;
@@ -27,15 +30,11 @@ public class MeetingService {
         this.systemProperties = systemProperties;
     }
 
-    public TeamsMeeting create(LTIUser organizer, String subject, HttpServletRequest httpServletRequest) {
-        TeamsMeeting meeting = onlineToTeamsMeeting(this.graphClient.createMeeting(organizer.email(), subject));
-        meeting.url(meetingURL(meeting));
-        return meeting;
-    }
-
     public TeamsMeeting create(String organizerEmail, String subject, HttpServletRequest httpServletRequest) {
+        logger.info("User [{}]; create teams meeting with subject [{}]...", organizerEmail, subject);
         TeamsMeeting meeting = onlineToTeamsMeeting(this.graphClient.createMeeting(organizerEmail, subject));
         meeting.url(meetingURL(meeting));
+        logger.info("User [{}]; ... teams meeting with subject [{}] created", organizerEmail, subject);
         return meeting;
     }
 
@@ -52,11 +51,9 @@ public class MeetingService {
 
     protected URL meetingURL(TeamsMeeting teamsMeeting) {
         try {
-            /* TODO: use real url, not join url
-            return UrlBuilder.parse("%s/meetings/%s"
+            return UrlBuilder.parse("%s/pages/meeting/%s.html"
                     .formatted(this.systemProperties.baseURL(), teamsMeeting.id())).toUrl();
-             */
-            return UrlBuilder.parse(teamsMeeting.joinURL()).toUrl();
+            // joinURL is interpreted as link to Teams Classes.... return UrlBuilder.parse(teamsMeeting.joinURL()).toUrl();
         }
         catch(MalformedURLException e) {
             // TODO, better exception handling
