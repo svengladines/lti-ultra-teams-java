@@ -131,7 +131,7 @@ public class MeetingController {
             this.meetingService.get(organizer,id).ifPresent(m -> {
                 model.addAttribute("meeting", map(m));
             });
-        return "/meeting/view";
+        return "meeting/view";
     }
 
     @PostMapping(value = RESOURCE_COLLECTION_PATH, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
