@@ -7,7 +7,6 @@ import be.occam.lti.ultra.teams.domain.TeamsMeeting;
 import be.occam.lti.ultra.teams.domain.service.LTIService;
 import be.occam.lti.ultra.teams.domain.service.MeetingService;
 import be.occam.lti.ultra.teams.web.dto.MeetingDTO;
-import com.azure.core.util.UrlBuilder;
 import com.nimbusds.jwt.JWT;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -17,19 +16,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.DefaultUriBuilderFactory;
-import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.web.util.UriUtils;
 
-import java.net.URI;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.util.Optional;
 
 @Controller
@@ -141,7 +132,7 @@ public class MeetingController {
             Model model) {
         try {
             String subject = meetingDTO.getSubject();
-            TeamsMeeting teamsMeeting = this.meetingService.create(meetingDTO.getUserEmail(), subject, httpRequest).orElseThrow(() -> new RuntimeException("could not create meeting"));
+            TeamsMeeting teamsMeeting = this.meetingService.create(meetingDTO.getOrganizer(), subject, httpRequest).orElseThrow(() -> new RuntimeException("could not create meeting"));
             JWT jwt = this.ltiService.deepLinkingResponseToken(subject,teamsMeeting.url(),meetingDTO.getJwt());
             model.addAttribute("jwt", jwt.serialize());
             // TODO, remove hardcoded, use value from launch request

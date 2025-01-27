@@ -3,7 +3,7 @@ package be.occam.lti.ultra.teams.web.dto;
 public class MeetingDTO {
     protected  String id;
     protected String subject;
-    protected String userEmail;
+    protected String organizer;
     protected String joinUrl;
     protected String jwt;
 
@@ -16,12 +16,12 @@ public class MeetingDTO {
         return this;
     }
 
-    public String getUserEmail() {
-        return userEmail;
+    public String getOrganizer() {
+        return organizer;
     }
 
-    public MeetingDTO setUserEmail(String userEmail) {
-        this.userEmail = userEmail;
+    public MeetingDTO setOrganizer(String organizer) {
+        this.organizer = organizer;
         return this;
     }
 
