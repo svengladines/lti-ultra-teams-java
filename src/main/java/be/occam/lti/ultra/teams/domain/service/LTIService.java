@@ -91,7 +91,7 @@ public class LTIService {
             logger.warn("Expected client id [{}], actual [{}]", ltiIdTokenValidator.getClientID(), clientId);
             throw new ResponseStatusException(BAD_REQUEST);
         }
-        
+
         String nonce = UUID.randomUUID().toString().replace("-","");
         String state = nonce;
         String ltiRedirect = "%s%s".formatted(this.systemProperties.baseURL(),launchPath);
@@ -191,7 +191,7 @@ public class LTIService {
 
     public URL targetURL(Map<String,Object> claims ) {
         try {
-            final String targetLinkUrl = (String) claims.get("targetLinkUrl");
+            final String targetLinkUrl = (String) claims.get("https://purl.imsglobal.org/spec/lti/claim/target_link_uri");
             return UrlBuilder.parse(targetLinkUrl).toUrl();
         }
         catch(Exception e){
