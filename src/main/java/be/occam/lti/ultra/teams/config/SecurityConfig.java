@@ -30,14 +30,13 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz.requestMatchers("/javascript/*").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/login/*").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/ltiLogin").permitAll())
-            .authorizeHttpRequests(authz -> authz.requestMatchers("/ltiLoginLocal").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/jwks").permitAll())
 
             // permit all (cookieless and therefore sessionless and therefore not authenticated)
             .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting").permitAll())
-            .authorizeHttpRequests(authz -> authz.requestMatchers("/meetingLocal").permitAll())
+                .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting/**").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/api/meetings").permitAll())
-            .authorizeHttpRequests(authz -> authz.requestMatchers("/api/meetings/**").permitAll())
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/api/meetings/*").permitAll())
             .build();
     }
 
