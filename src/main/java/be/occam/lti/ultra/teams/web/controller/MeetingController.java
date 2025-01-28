@@ -8,6 +8,7 @@ import be.occam.lti.ultra.teams.domain.TeamsMeeting;
 import be.occam.lti.ultra.teams.domain.service.LTIService;
 import be.occam.lti.ultra.teams.domain.service.MeetingService;
 import be.occam.lti.ultra.teams.web.dto.MeetingDTO;
+import com.azure.core.util.UrlBuilder;
 import com.nimbusds.jwt.JWT;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -30,7 +31,7 @@ import java.util.Optional;
 @Controller
 public class MeetingController {
 
-    public static final String VIEW_PATH = "/meeting/{organizer}/{id}";
+    public static final String VIEW_PATH = "/meeting/{organizer}/{id}.html";
 
     public static final String RESOURCE_COLLECTION_PATH = "/api/meetings";
     public static final String RESOURCE_SINGLE_PATH = "/api/meetings/{id}";
@@ -84,7 +85,7 @@ public class MeetingController {
         try {
             String subject = meetingDTO.getSubject();
             TeamsMeeting teamsMeeting = this.meetingService.create(meetingDTO.getOrganizer(), subject, httpRequest).orElseThrow(() -> new RuntimeException("could not create meeting"));
-            JWT jwt = this.ltiService.deepLinkingResponseToken(subject,teamsMeeting.url(),meetingDTO.getJwt());
+            JWT jwt = this.ltiService.deepLinkingResponseToken(subject,viewURL(teamsMeeting),meetingDTO.getJwt());
             model.addAttribute("jwt", jwt.serialize());
             // TODO, remove hardcoded, use value from launch request
             model.addAttribute("responseUrl", "%s/webapps/blackboard/controller/lti/v2/deeplinking".formatted(this.systemProperties.ultraURL()));
@@ -101,5 +102,14 @@ public class MeetingController {
         to.setSubject(from.subject());
         to.setJoinUrl(from.joinURL());
         return to;
+    }
+
+    protected URL viewURL(TeamsMeeting from) {
+        try {
+            return UrlBuilder.parse("%s%s".formatted(this.systemProperties.baseURL(), VIEW_PATH).toString().replace("{organizer}", from.organizer()).replace("{id}", from.id())).toUrl();
+        }
+        catch(Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
