@@ -19,6 +19,9 @@ occam:
           client-id: <vaulted>
           client-secret: <vaulted>
           scopes: https://graph.microsoft.com/.default
+      teams:
+        system:
+          lti-launch-path: meeting
 
 spring:
   security:

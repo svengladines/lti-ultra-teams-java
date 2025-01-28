@@ -22,6 +22,7 @@ import org.springframework.ui.Model;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -29,8 +30,7 @@ import java.util.Optional;
 @Controller
 public class MeetingController {
 
-    public static final String LAUNCH_PATH = "/meeting";
-    public static final String LAUNCH_RESOURCE_LINK_PATH = "/meeting/{organizer}/{id}";
+    public static final String VIEW_PATH = "/meeting/{organizer}/{id}";
 
     public static final String RESOURCE_COLLECTION_PATH = "/api/meetings";
     public static final String RESOURCE_SINGLE_PATH = "/api/meetings/{id}";
@@ -49,48 +49,6 @@ public class MeetingController {
         this.systemProperties = systemProperties;
     }
 
-    @PostMapping(value = LAUNCH_PATH)
-    public String launch(
-            @RequestParam("id_token") String idToken,
-            @RequestParam("state") String state,
-            HttpServletRequest httpRequest,
-            Model model) {
-        Map<String,Object> claims = new HashMap<>();
-        LTIUser ltiUser = this.ltiService.authenticated(idToken, state,claims);
-        logger.info("User [{}] with email [{}] logged in via cookieless LTI", ltiUser.userId(), ltiUser.email());
-        LTILaunchType launchType = this.ltiService.launchType(claims);
-        if (launchType.equals(LTILaunchType.DEEPLINKING_REQUEST)) {
-            model.addAttribute("organizer", ltiUser.email());
-            model.addAttribute("jwt", ltiUser.jwt().serialize());
-            return "meeting/create";
-        }
-        else {
-            throw new RuntimeException("invalid message type");
-        }
-    }
-
-    @PostMapping(value = LAUNCH_RESOURCE_LINK_PATH)
-    public String launchResourceLink(
-            @RequestParam("id_token") String idToken,
-            @RequestParam("state") String state,
-            @PathVariable("organizer") String organizer,
-            @PathVariable("id") String id,
-            Model model) {
-        Map<String,Object> claims = new HashMap<>();
-        LTIUser ltiUser = this.ltiService.authenticated(idToken, state,claims);
-        logger.info("User [{}] with email [{}] logged in via cookieless LTI", ltiUser.userId(), ltiUser.email());
-        LTILaunchType launchType = this.ltiService.launchType(claims);
-        if (launchType.equals(LTILaunchType.RESOURCE_LINK_REQUEST)) {
-            this.meetingService.get(organizer,id).ifPresent(m -> {
-                model.addAttribute("meeting", map(m));
-            });
-            return "meeting/view";
-        }
-        else {
-            throw new RuntimeException("invalid message type");
-        }
-    }
-
     @GetMapping(value = RESOURCE_SINGLE_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public ResponseEntity<MeetingDTO> get(
@@ -107,8 +65,7 @@ public class MeetingController {
 
     }
 
-    /*
-    @GetMapping(value = RESOURCE_SINGLE_VIEW_PATH, produces = MediaType.TEXT_HTML_VALUE)
+    @GetMapping(value = VIEW_PATH, produces = MediaType.TEXT_HTML_VALUE)
     public String view(
             @PathVariable("organizer") String organizer,
             @PathVariable("id") String id,
@@ -118,7 +75,6 @@ public class MeetingController {
             });
         return "meeting/view";
     }
-     */
 
     @PostMapping(value = RESOURCE_COLLECTION_PATH, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public String postForm(

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+    <form id="resource-link-response-form" method="GET" th:action="${redirectUrl}">
+        <input type="submit">
+    </form>
+
+</body>
+<script>
+    document.getElementById("resource-link-response-form").submit();
+</script>
+
+</html>

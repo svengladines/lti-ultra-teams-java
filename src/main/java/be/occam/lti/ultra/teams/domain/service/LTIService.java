@@ -16,7 +16,6 @@ import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
-import com.nimbusds.oauth2.sdk.id.State;
 import com.nimbusds.oauth2.sdk.id.Subject;
 import com.nimbusds.oauth2.sdk.token.TypelessToken;
 import com.nimbusds.openid.connect.sdk.Nonce;
@@ -26,12 +25,8 @@ import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.server.session.DefaultWebSessionManager;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriUtils;
 
@@ -83,10 +78,10 @@ public class LTIService {
 
     public LTILoginData thirdPartyLogin(
             Issuer issuer,
-            URI redirectUri,
             ClientID clientId,
             String loginHint,
             String ltiMessageHint,
+            String launchPath,
             HttpServletRequest httpRequest) {
         if (!ltiIdTokenValidator.getExpectedIssuer().equals(issuer)) {
                 logger.warn("Expected issuer [{}], actual [{}]", ltiIdTokenValidator.getExpectedIssuer(), issuer);
@@ -96,13 +91,16 @@ public class LTIService {
             logger.warn("Expected client id [{}], actual [{}]", ltiIdTokenValidator.getClientID(), clientId);
             throw new ResponseStatusException(BAD_REQUEST);
         }
+        /*
         else if (!Arrays.stream(this.redirects).anyMatch(r -> redirectUri.toString().startsWith(r.toString()))) {
             logger.warn("Expected redirect uris {}, actual [{}]", this.redirects, redirectUri);
             throw new ResponseStatusException(BAD_REQUEST);
         }
+         */
 
         String nonce = UUID.randomUUID().toString().replace("-","");
         String state = nonce;
+        String ltiRedirect = "%s/%s".formatted(this.systemProperties.baseURL(),launchPath);
         /* cookieless
         HttpSession session = httpRequest.getSession(true);
         // TODO: make multi-tab-safe (session shared between tabs)
@@ -116,8 +114,7 @@ public class LTIService {
                 .queryParam("scope", "openid")
                 .queryParam("response_type", "id_token")
                 .queryParam("client_id", clientId.getValue())
-                .queryParam("redirect_uri", UriUtils.encodeQueryParam(redirectUri.toString(),Charset.defaultCharset()))
-                // TODO - store login hint for later verification
+                .queryParam("redirect_uri", UriUtils.encodeQueryParam(ltiRedirect,Charset.defaultCharset()))
                 .queryParam("login_hint", loginHint)
                 .queryParam("lti_message_hint", ltiMessageHint)
                 .queryParam("response_mode", "form_post")
@@ -196,6 +193,16 @@ public class LTIService {
             case "LtiResourceLinkRequest" -> LTILaunchType.RESOURCE_LINK_REQUEST;
             default -> LTILaunchType.X;
         };
+    }
+
+    public URL targetURL(Map<String,Object> claims ) {
+        try {
+            final String targetLinkUrl = (String) claims.get("targetLinkUrl");
+            return UrlBuilder.parse(targetLinkUrl).toUrl();
+        }
+        catch(Exception e){
+            throw new RuntimeException(e);
+        }
     }
 
     public JWT deepLinkingResponseToken(String title, URL url, String jwt) {
