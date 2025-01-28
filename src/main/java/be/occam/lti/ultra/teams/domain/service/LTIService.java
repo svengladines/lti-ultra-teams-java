@@ -91,16 +91,10 @@ public class LTIService {
             logger.warn("Expected client id [{}], actual [{}]", ltiIdTokenValidator.getClientID(), clientId);
             throw new ResponseStatusException(BAD_REQUEST);
         }
-        /*
-        else if (!Arrays.stream(this.redirects).anyMatch(r -> redirectUri.toString().startsWith(r.toString()))) {
-            logger.warn("Expected redirect uris {}, actual [{}]", this.redirects, redirectUri);
-            throw new ResponseStatusException(BAD_REQUEST);
-        }
-         */
-
+        
         String nonce = UUID.randomUUID().toString().replace("-","");
         String state = nonce;
-        String ltiRedirect = "%s/%s".formatted(this.systemProperties.baseURL(),launchPath);
+        String ltiRedirect = "%s%s".formatted(this.systemProperties.baseURL(),launchPath);
         /* cookieless
         HttpSession session = httpRequest.getSession(true);
         // TODO: make multi-tab-safe (session shared between tabs)
