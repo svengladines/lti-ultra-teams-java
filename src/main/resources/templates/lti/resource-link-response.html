@@ -5,14 +5,10 @@
     <title>Title</title>
 </head>
 <body>
-
-    <form id="resource-link-response-form" method="GET" th:action="${redirectUrl}">
-        <input type="submit">
-    </form>
-
+    <a id="redirectLink" th:href="@{${redirectUrl}}">Go to resource</a>
 </body>
 <script>
-    document.getElementById("resource-link-response-form").submit();
+    window.location.href = document.getElementById('redirectLink').attr('href').value;
 </script>
 
 </html>
