@@ -14,7 +14,7 @@ import java.util.UUID;
 public class GraphClient {
 
     protected final GraphServiceClient graphServiceClient;
-    protected final Logger log = LoggerFactory.getLogger(this.getClass());
+    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
     public GraphClient(GraphServiceClient graphServiceClient) {
@@ -33,7 +33,7 @@ public class GraphClient {
         OnlineMeeting createdMeeting = this.graphServiceClient.users().byUserId(user.getId())
                 .onlineMeetings()
                 .post(onlineMeeting);
-        log.info("User [{}]; created online meeting [{}]", user.getId(), createdMeeting);
+        logger.info("User [{}]; created online meeting [{}]", user.getId(), createdMeeting);
         return createdMeeting;
 
     }
@@ -43,7 +43,7 @@ public class GraphClient {
         OnlineMeeting meeting = this.graphServiceClient.users().byUserId(user.getId())
                 .onlineMeetings()
                 .byOnlineMeetingId(id).get();
-        log.info("User [{}]; got online meeting with id [{}] and subject [{}]", user.getId(), meeting.getId(), meeting.getSubject() );
+        logger.info("User [{}]; got online meeting with id [{}] and subject [{}]", user.getId(), meeting.getId(), meeting.getSubject() );
         return meeting;
     }
 
@@ -52,16 +52,19 @@ public class GraphClient {
         User pUser = this.graphServiceClient.usersWithUserPrincipalName(participant).get();
         OnlineMeeting existing  = this.getMeeting(organizer,meetingId);
         MeetingParticipants existingParticipants = existing.getParticipants();
+
         MeetingParticipantInfo participantInfo = new MeetingParticipantInfo();
         participantInfo.setUpn(participant);
         participantInfo.setRole(OnlineMeetingRole.Attendee);
         existingParticipants.getAttendees().add(participantInfo);
-        OnlineMeeting patchMeeting = new OnlineMeeting();
-        patchMeeting.setParticipants(existingParticipants);
+        logger.info("organizer is [{}]", existing.getParticipants().getOrganizer().getUpn());
+        existing.getParticipants().getAttendees().stream().forEach(a -> {
+            logger.info("attendee [{}]", a.getUpn());
+        });
         return this.graphServiceClient.users().byUserId(oUser.getId())
                 .onlineMeetings()
                 .byOnlineMeetingId(meetingId)
-                .patch(patchMeeting);
+                .patch(existing);
 
     }
 
