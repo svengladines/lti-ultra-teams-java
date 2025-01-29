@@ -18,10 +18,10 @@
         <tr>
             <th>Voeg me toe als deelnemer</th>
             <td>
-                <form method="POST" action="@{${participantsUrl}}"></form>
-                    Je wordt toegevoegd als <a th:href="@{mailto:${me}}" th:text="${me}"></a>
+                <form method="POST" th:action="@{${participantsUrl}}"></form>
+                    Je wordt toegevoegd als <a th:href="@{'mailto:' + ${me}}" th:text="${me}"></a>
                     <input type="hidden" name="participant.email" th:value="${me}">
-                    <input type="submit">Voeg me toe</input>
+                    <input type="submit" th:value="Voeg me toe"/>
                 </form>
             </td>
         </tr>
