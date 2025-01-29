@@ -3,6 +3,7 @@ package be.occam.lti.ultra.teams.domain.service;
 import be.occam.lti.ultra.teams.config.SystemProperties;
 import be.occam.lti.ultra.teams.domain.TeamsMeeting;
 import be.occam.lti.ultra.teams.infrastructure.microsoft.GraphClient;
+import be.occam.lti.ultra.teams.web.dto.ParticipantDTO;
 import com.azure.core.util.UrlBuilder;
 import com.microsoft.graph.models.OnlineMeeting;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,6 +44,12 @@ public class MeetingService {
 
     public Optional<TeamsMeeting> get(String organizer, String id) {
         return map(this.graphClient.getMeeting(organizer,id)).map(m -> m.organizer(organizer));
+    }
+
+    public Optional<TeamsMeeting> addParticipant(String organizer, String meetingId, ParticipantDTO participant) {
+        logger.info("User [{}]; add as participant to teams meeting with id [{}]", participant.getEmail(), meetingId);
+        OnlineMeeting onlineMeeting = this.graphClient.addParticipant(organizer,meetingId, participant.getEmail());
+        return map(onlineMeeting);
     }
 
     protected Optional<TeamsMeeting> map(OnlineMeeting onlineMeeting) {

@@ -8,7 +8,7 @@
     <a id="redirectLink" th:href="@{${redirectUrl}}">Go to resource</a>
 </body>
 <script>
-    window.location.href = document.getElementById('redirectLink').attr('href').value;
+    window.location.href = document.getElementById('redirectLink').href;
 </script>
 
 </html>

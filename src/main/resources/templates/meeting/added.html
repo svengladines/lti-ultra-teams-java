@@ -6,6 +6,8 @@
 </head>
 <body>
 
+    <p>You have been added to following meeting</p>
+
     <table>
         <tr>
             <th>Onderwerp</th>
@@ -16,17 +18,13 @@
             <td th:text="${meeting.organizer}"></td>
         </tr>
         <tr>
-            <th>Voeg me toe als deelnemer</th>
+            <th>Verwijder me als deelnemer</th>
             <td>
-                <form method="POST" action="@{${participantsUrl}}"></form>
-                    Je wordt toegevoegd als <a th:href="@{mailto:${me}}" th:text="${me}"></a>
-                    <input type="hidden" name="participant.email" th:value="${me}">
-                    <input type="submit">Voeg me toe</input>
-                </form>
-            </td>
+                <form method="POST" action="xxx"></form>
+                <input type="button" onclick="">Verwijder me</td>
         </tr>
         <tr>
-            <th>Deelnemen als gast</th>
+            <th>Deelnemen</th>
             <td><a th:href="@{${meeting.joinUrl}}" target="_blank">Deelnemen kan via deze link</a></td>
         </tr>
     </table>

@@ -35,6 +35,7 @@ public class GraphClient {
                 .post(onlineMeeting);
         log.info("User [{}]; created online meeting [{}]", user.getId(), createdMeeting);
         return createdMeeting;
+
     }
 
     public OnlineMeeting getMeeting(String organizer, String id) {
@@ -44,6 +45,24 @@ public class GraphClient {
                 .byOnlineMeetingId(id).get();
         log.info("User [{}]; got online meeting with id [{}] and subject [{}]", user.getId(), meeting.getId(), meeting.getSubject() );
         return meeting;
+    }
+
+    public OnlineMeeting addParticipant(String organizer, String meetingId, String participant) {
+        User oUser = this.graphServiceClient.usersWithUserPrincipalName(organizer).get();
+        User pUser = this.graphServiceClient.usersWithUserPrincipalName(participant).get();
+        OnlineMeeting existing  = this.getMeeting(organizer,meetingId);
+        MeetingParticipants existingParticipants = existing.getParticipants();
+        MeetingParticipantInfo participantInfo = new MeetingParticipantInfo();
+        participantInfo.setUpn(participant);
+        participantInfo.setRole(OnlineMeetingRole.Attendee);
+        existingParticipants.getAttendees().add(participantInfo);
+        OnlineMeeting patchMeeting = new OnlineMeeting();
+        patchMeeting.setParticipants(existingParticipants);
+        return this.graphServiceClient.users().byUserId(oUser.getId())
+                .onlineMeetings()
+                .byOnlineMeetingId(meetingId)
+                .patch(patchMeeting);
+
     }
 
 }

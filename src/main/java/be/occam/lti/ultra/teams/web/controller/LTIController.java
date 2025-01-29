@@ -1,11 +1,13 @@
 package be.occam.lti.ultra.teams.web.controller;
 
+import static be.occam.lti.ultra.teams.util.URLHelper.*;
 import be.occam.lti.ultra.teams.config.SystemProperties;
-import be.occam.lti.ultra.teams.config.feature.LocalProperties;
 import be.occam.lti.ultra.teams.domain.LTILaunchType;
 import be.occam.lti.ultra.teams.domain.LTILoginData;
 import be.occam.lti.ultra.teams.domain.LTIUser;
 import be.occam.lti.ultra.teams.domain.service.LTIService;
+import be.occam.lti.ultra.teams.util.URLHelper;
+import com.azure.core.util.UrlBuilder;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,13 +33,11 @@ public class LTIController {
 
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final LTIService ltiService;
-    protected final LocalProperties localProperties;
     protected final SystemProperties systemProperties;
 
     @Autowired
-    public LTIController(LTIService ltiService, LocalProperties localProperties, SystemProperties systemProperties) {
+    public LTIController(LTIService ltiService, SystemProperties systemProperties) {
         this.ltiService = ltiService;
-        this.localProperties = localProperties;
         this.systemProperties = systemProperties;
     }
 
@@ -65,9 +65,12 @@ public class LTIController {
             @RequestParam("state") String state,
             HttpServletRequest httpRequest,
             Model model) {
+
         Map<String,Object> claims = new HashMap<>();
+        // authenticate user based on received token
         LTIUser ltiUser = this.ltiService.authenticated(idToken, state,claims);
         logger.info("User [{}] with email [{}] logged in via cookieless LTI", ltiUser.userId(), ltiUser.email());
+        // distinguish between launch type
         LTILaunchType launchType = this.ltiService.launchType(claims);
         if (launchType.equals(LTILaunchType.DEEPLINKING_REQUEST)) {
             model.addAttribute("organizer", ltiUser.email());
@@ -76,6 +79,7 @@ public class LTIController {
         }
         else if (launchType.equals(LTILaunchType.RESOURCE_LINK_REQUEST)) {
             URL targetURL = this.ltiService.targetURL(claims);
+            targetURL = url(builder(targetURL).addQueryParameter("me", ltiUser.email()));
             model.addAttribute("redirectUrl", targetURL.toString());
             return "lti/resource-link-response";
         }
