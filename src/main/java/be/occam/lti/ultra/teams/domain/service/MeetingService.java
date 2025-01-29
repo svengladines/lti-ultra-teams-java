@@ -58,9 +58,11 @@ public class MeetingService {
         }
         else {
             return Optional.of(new TeamsMeeting()
-                    .id(onlineMeeting.getId())
-                    .joinURL(onlineMeeting.getJoinWebUrl())
-                    .subject(onlineMeeting.getSubject()));
+                .id(onlineMeeting.getId())
+                .subject(onlineMeeting.getSubject())
+                .organizer(onlineMeeting.getParticipants().getOrganizer().getUpn())
+                .joinURL(onlineMeeting.getJoinWebUrl())
+            );
         }
     }
 
