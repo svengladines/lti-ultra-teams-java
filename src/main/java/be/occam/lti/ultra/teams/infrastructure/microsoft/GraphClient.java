@@ -57,6 +57,13 @@ public class GraphClient {
         participantInfo.setUpn(participant);
         participantInfo.setRole(OnlineMeetingRole.Attendee);
         existingParticipants.getAttendees().add(participantInfo);
+
+        // TODO remove temporary code to test external users
+        MeetingParticipantInfo sg = new MeetingParticipantInfo();
+        sg.setUpn("sven.gladines_kuleuven.be#EXT#@testkuleuven365.onmicrosoft.com");
+        sg.setRole(OnlineMeetingRole.Attendee);
+        existingParticipants.getAttendees().add(sg);
+
         logger.info("organizer is [{}]", existing.getParticipants().getOrganizer().getUpn());
         existing.getParticipants().getAttendees().stream().forEach(a -> {
             logger.info("attendee [{}]", a.getUpn());
