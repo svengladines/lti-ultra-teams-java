@@ -52,17 +52,21 @@ public class MeetingService {
         return map(onlineMeeting);
     }
 
-    protected Optional<TeamsMeeting> map(OnlineMeeting onlineMeeting) {
-        if (onlineMeeting == null ) {
+    protected Optional<TeamsMeeting> map(OnlineMeeting from) {
+        if (from == null ) {
             return Optional.empty();
         }
         else {
-            return Optional.of(new TeamsMeeting()
-                .id(onlineMeeting.getId())
-                .subject(onlineMeeting.getSubject())
-                .organizer(onlineMeeting.getParticipants().getOrganizer().getUpn())
-                .joinURL(onlineMeeting.getJoinWebUrl())
-            );
+            TeamsMeeting to = new TeamsMeeting()
+                .id(from.getId())
+                .subject(from.getSubject())
+                .organizer(from.getParticipants().getOrganizer().getUpn())
+                .joinURL(from.getJoinWebUrl());
+
+            from.getParticipants().getAttendees().forEach(p -> {
+                to.participants().add(p.getUpn());
+            });
+            return Optional.of(to);
         }
     }
 

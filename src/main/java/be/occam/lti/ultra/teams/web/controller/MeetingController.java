@@ -22,6 +22,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URL;
+import java.util.List;
 import java.util.Optional;
 
 @Controller
@@ -121,6 +122,7 @@ public class MeetingController {
         to.setOrganizer(from.organizer());
         to.setSubject(from.subject());
         to.setJoinUrl(from.joinURL());
+        to.setParticipants(List.copyOf(from.participants()));
         return to;
     }
 

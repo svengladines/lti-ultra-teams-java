@@ -27,6 +27,15 @@
             <th>Deelnemen</th>
             <td><a th:href="@{${meeting.joinUrl}}" target="_blank">Deelnemen kan via deze link</a></td>
         </tr>
+        <tr>
+            <th>Deelnemers</th>
+            <td>
+                <ul>
+                    <li th:each="participants:${meeting.participants}" th:text="${participant}"/>
+                </ul>
+            </td>
+        </tr>
+
     </table>
 </body>
 </html>

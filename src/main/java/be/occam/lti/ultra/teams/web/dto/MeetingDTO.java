@@ -1,11 +1,14 @@
 package be.occam.lti.ultra.teams.web.dto;
 
+import java.util.List;
+
 public class MeetingDTO {
     protected  String id;
     protected String subject;
     protected String organizer;
     protected String joinUrl;
     protected String jwt;
+    protected List<String> participants;
 
     public String getSubject() {
         return subject;
@@ -49,6 +52,15 @@ public class MeetingDTO {
 
     public MeetingDTO setId(String id) {
         this.id = id;
+        return this;
+    }
+
+    public List<String> getParticipants() {
+        return participants;
+    }
+
+    public MeetingDTO setParticipants(List<String> participants) {
+        this.participants = participants;
         return this;
     }
 }
