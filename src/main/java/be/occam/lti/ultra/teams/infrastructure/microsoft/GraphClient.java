@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.UUID;
 
 @Component
@@ -59,8 +60,10 @@ public class GraphClient {
         MeetingParticipantInfo newParticipantInfo = new MeetingParticipantInfo();
         newParticipantInfo.setUpn(participant);
         newParticipantInfo.setRole(OnlineMeetingRole.Attendee);
+        toPatchParticipants.setAttendees(new ArrayList<>());
         toPatchParticipants.getAttendees().add(newParticipantInfo);
         existing.getParticipants().getAttendees().forEach(a -> {
+            logger.info("adding existing particpant [{}] to patch", a.getUpn());
             toPatchParticipants.getAttendees().add(a);
         });
         toPatchParticipants.setOrganizer(existing.getParticipants().getOrganizer());
