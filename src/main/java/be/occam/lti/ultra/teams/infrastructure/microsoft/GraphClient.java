@@ -53,27 +53,34 @@ public class GraphClient {
         User oUser = this.graphServiceClient.usersWithUserPrincipalName(organizer).get();
         User pUser = this.graphServiceClient.usersWithUserPrincipalName(participant).get();
         OnlineMeeting existing  = this.getMeeting(organizer,meetingId);
-        MeetingParticipants existingParticipants = existing.getParticipants();
 
-        MeetingParticipantInfo participantInfo = new MeetingParticipantInfo();
-        participantInfo.setUpn(participant);
-        participantInfo.setRole(OnlineMeetingRole.Attendee);
-        existingParticipants.getAttendees().add(participantInfo);
-
-        // TODO remove temporary code to test external users
-        MeetingParticipantInfo sg = new MeetingParticipantInfo();
-        sg.setUpn("sven.gladines_kuleuven.be#EXT#@testkuleuven365.onmicrosoft.com");
-        sg.setRole(OnlineMeetingRole.Attendee);
-        existingParticipants.getAttendees().add(sg);
+        OnlineMeeting toPatch = new OnlineMeeting();
+        MeetingParticipants toPatchParticipants = new MeetingParticipants();
+        MeetingParticipantInfo newParticipantInfo = new MeetingParticipantInfo();
+        newParticipantInfo.setUpn(participant);
+        newParticipantInfo.setRole(OnlineMeetingRole.Attendee);
+        toPatchParticipants.getAttendees().add(newParticipantInfo);
+        existing.getParticipants().getAttendees().forEach(a -> {
+            toPatchParticipants.getAttendees().add(a);
+        });
+        toPatchParticipants.setOrganizer(existing.getParticipants().getOrganizer());
+        toPatch.setParticipants(toPatchParticipants);
 
         logger.info("organizer is [{}]", existing.getParticipants().getOrganizer().getUpn());
         existing.getParticipants().getAttendees().stream().forEach(a -> {
             logger.info("attendee [{}]", a.getUpn());
         });
-        return this.graphServiceClient.users().byUserId(oUser.getId())
+        OnlineMeeting patched = this.graphServiceClient.users().byUserId(oUser.getId())
                 .onlineMeetings()
                 .byOnlineMeetingId(meetingId)
                 .patch(existing);
+
+        logger.info("patched meeting has organizer [{}]", patched.getParticipants().getOrganizer().getUpn());
+        patched.getParticipants().getAttendees().forEach(a -> {
+            logger.info("patched meeting has attendee [{}]", a.getUpn());
+        });
+        return patched;
+
 
     }
 
