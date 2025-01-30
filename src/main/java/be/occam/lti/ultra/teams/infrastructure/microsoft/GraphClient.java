@@ -55,6 +55,9 @@ public class GraphClient {
         User pUser = this.graphServiceClient.usersWithUserPrincipalName(participant).get();
         OnlineMeeting existing  = this.getMeeting(organizer,meetingId);
 
+
+
+
         OnlineMeeting toPatch = new OnlineMeeting();
         MeetingParticipants toPatchParticipants = new MeetingParticipants();
 
@@ -73,7 +76,6 @@ public class GraphClient {
         //toPatchParticipants.setOrganizer(existing.getParticipants().getOrganizer());
         toPatch.setParticipants(toPatchParticipants);
 
-        logger.info("organizer is [{}]", existing.getParticipants().getOrganizer().getUpn());
         existing.getParticipants().getAttendees().stream().forEach(a -> {
             logger.info("attendee [{}]", a.getUpn());
         });

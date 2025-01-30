@@ -33,7 +33,7 @@
             <th>Deelnemers</th>
             <td>
                 <ul>
-                    <li th:each="participants:${meeting.participants}" th:text="${participant}"/>
+                    <li th:each="participant:${meeting.participants}" th:text="${participant}"/>
                 </ul>
             </td>
         </tr>
