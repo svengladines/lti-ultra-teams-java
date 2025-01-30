@@ -70,7 +70,7 @@ public class GraphClient {
             logger.info("adding existing participant [{}] to patch", a.getUpn());
             toPatchParticipants.getAttendees().add(a);
         });
-        toPatchParticipants.setOrganizer(existing.getParticipants().getOrganizer());
+        //toPatchParticipants.setOrganizer(existing.getParticipants().getOrganizer());
         toPatch.setParticipants(toPatchParticipants);
 
         logger.info("organizer is [{}]", existing.getParticipants().getOrganizer().getUpn());
