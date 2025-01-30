@@ -26,9 +26,11 @@ public class GraphClient {
         OnlineMeeting onlineMeeting = new OnlineMeeting();
         onlineMeeting.setSubject(subject);
         onlineMeeting.setStartDateTime(OffsetDateTime.parse("2024-12-15T10:00:00Z"));
+        /*
         LobbyBypassSettings lobbyBypassSettings = new LobbyBypassSettings();
         lobbyBypassSettings.setScope(LobbyBypassScope.Invited);
         onlineMeeting.setLobbyBypassSettings(lobbyBypassSettings);
+         */
         User user = this.graphServiceClient.usersWithUserPrincipalName(organizer).get();
         OnlineMeeting createdMeeting = this.graphServiceClient.users().byUserId(user.getId())
                 .onlineMeetings()
