@@ -57,13 +57,17 @@ public class GraphClient {
 
         OnlineMeeting toPatch = new OnlineMeeting();
         MeetingParticipants toPatchParticipants = new MeetingParticipants();
+
         MeetingParticipantInfo newParticipantInfo = new MeetingParticipantInfo();
         newParticipantInfo.setUpn(participant);
         newParticipantInfo.setRole(OnlineMeetingRole.Attendee);
+
         toPatchParticipants.setAttendees(new ArrayList<>());
+        logger.info("adding new participant [{}] to patch", newParticipantInfo.getUpn());
         toPatchParticipants.getAttendees().add(newParticipantInfo);
+
         existing.getParticipants().getAttendees().forEach(a -> {
-            logger.info("adding existing particpant [{}] to patch", a.getUpn());
+            logger.info("adding existing participant [{}] to patch", a.getUpn());
             toPatchParticipants.getAttendees().add(a);
         });
         toPatchParticipants.setOrganizer(existing.getParticipants().getOrganizer());
@@ -76,7 +80,7 @@ public class GraphClient {
         OnlineMeeting patched = this.graphServiceClient.users().byUserId(oUser.getId())
                 .onlineMeetings()
                 .byOnlineMeetingId(meetingId)
-                .patch(existing);
+                .patch(toPatch);
 
         logger.info("patched meeting has organizer [{}]", patched.getParticipants().getOrganizer().getUpn());
         patched.getParticipants().getAttendees().forEach(a -> {
