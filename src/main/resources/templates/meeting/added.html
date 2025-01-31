@@ -6,9 +6,11 @@
 </head>
 <body>
 
-    <p>You have been added to following meeting</p>
+    <p>
+        <strong>Je bent toegevoegd aan de meetup</strong>
+    </p>
 
-    <table>
+    <table class="table table-bordered">
         <tr>
             <th>Onderwerp</th>
             <td th:text="${meeting.subject}"></td>
@@ -17,23 +19,26 @@
             <th>Aangemaakt door</th>
             <td th:text="${meeting.organizer}"></td>
         </tr>
+        <!--
         <tr>
-            <th>Verwijder me als deelnemer</th>
+            <th>Verwijder me</th>
             <td>
                 <form method="POST" action="xxx"></form>
-                <input type="button" onclick="">Verwijder me</td>
+                <input type="submit" th:value="'Verwijder me'">
+            </td>
         </tr>
+        -->
         <tr>
-            <th>Deelnemen</th>
-            <td><a th:href="@{${meeting.joinUrl}}" target="_blank">Deelnemen kan via deze link</a></td>
-        </tr>
-        <tr>
-            <th>Deelnemers</th>
+            <th>Deze personen hebben aangegeven deel te zullen nemen</th>
             <td>
                 <ul>
                     <li th:each="participant:${meeting.participants}" th:text="${participant}"/>
                 </ul>
             </td>
+        </tr>
+        <tr>
+            <th>Deelnemen</th>
+            <td><a th:href="@{${meeting.joinUrl}}" target="_blank">Deelnemen kan via deze link</a></td>
         </tr>
 
     </table>

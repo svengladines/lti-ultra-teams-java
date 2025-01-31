@@ -1,12 +1,8 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Teams meeting</title>
-</head>
+<head th:replace="~{fragments/fragment-head :: head}">
 <body>
-
-    <table>
+    <table class="table table-bordered">
         <tr>
             <th>Onderwerp</th>
             <td th:text="${meeting.subject}"></td>
@@ -19,18 +15,18 @@
             <th>Voeg me toe als deelnemer</th>
             <td>
                 <form method="POST" th:action="@{${participantsUrl}}">
-                    Je wordt toegevoegd als <span th:text="${me}"></span>
+                    <div>Je wordt toegevoegd als <span th:text="${me}"></span></div>
                     <input type="hidden" name="email" th:value="${me}">
                     <input type="submit" th:value="'Voeg me toe'"/>
                 </form>
             </td>
         </tr>
         <tr>
-            <th>Deelnemen als gast</th>
-            <td><a th:href="@{${meeting.joinUrl}}" target="_blank">Deelnemen kan via deze link</a></td>
+            <th>Deelnemen</th>
+            <td><a th:href="@{${meeting.joinUrl}}" target="_blank">Via deze link</a> kan je de aan de meetup deelnemen.</td>
         </tr>
         <tr>
-            <th>Deelnemers</th>
+            <th>Deze personen hebben aangegeven deel te zullen nemen</th>
             <td>
                 <ul>
                     <li th:each="participant:${meeting.participants}" th:text="${participant}"/>

@@ -8,7 +8,7 @@
             <td th:text="${meeting.subject}"></td>
         </tr>
         <tr>
-            <th>Intentie om deel te nemen</th>
+            <th>Deze personen hebben aangegeven deel te zullen nemen</th>
             <td>
                 <ul>
                     <li th:each="participant:${meeting.participants}" th:text="${participant}"/>
@@ -16,7 +16,7 @@
             </td>
         <tr>
             <th>Deelnemen</th>
-            <td><a th:href="@{${meeting.joinUrl}}" target="_blank">Via deze link</a>kan je de aan de meetup deelnemen.</td>
+            <td><a th:href="@{${meeting.joinUrl}}" target="_blank">Via deze link</a> kan je de aan de meetup deelnemen.</td>
         </tr>
     </table>
 </body>

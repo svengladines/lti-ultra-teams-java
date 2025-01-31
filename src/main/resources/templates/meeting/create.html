@@ -1,16 +1,44 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Create a new Teams meeting</title>
-</head>
+<head th:replace="~{fragments/fragment-head :: head}">
 <body>
 
-    <form method="POST" th:action="@{/api/meetings}">
-        <input type="hidden" name="organizer" th:value="${organizer}">
-        <input type="hidden" name="jwt" th:value="${jwt}">
-        <input type="text" name="subject">
-        <input type="submit">
+    <form class="form-horizontal" method="POST" th:action="@{/api/meetings}">
+        <div class="control-group">
+            <input type="hidden" name="organizer" th:value="${organizer}">
+            <input type="hidden" name="jwt" th:value="${jwt}">
+        </div>
+            <div class="control-group">
+                <label for="subject">Onderwerp</label>
+                <input id="subject" type="text" name="subject" placeholder="Onderwerp">
+            </div>
+            <div class="control-group">
+                <label for="date">Datum:</label>
+                <input type="date" id="date" name="date" th:value="${#dates.format(#dates.createNow(), 'dd-MM-yyyy')}">
+            </div>
+            <div class="control-group">
+                <label>Van</label>
+                <select id="from-hour" name="fromHour">
+                    <option th:each="hour : ${#numbers.sequence(0, 23)}" th:text="${hour}" th:value="${hour}"></option>
+                </select>
+                &nbsp;
+                <select id="from-minute" name="fromMinute">
+                    <option th:each="minute : ${#arrays.asList(0, 30)}" th:text="${minute}" th:value="${minute}"></option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Tot</label>
+                <select id="to-hour" name="toHour">
+                    <option th:each="hour : ${#numbers.sequence(0, 23)}" th:text="${hour}" th:value="${hour}"></option>
+                </select>
+                &nbsp;
+                <select id="to-minute" name="toMinute">
+                    <option th:each="minute : ${#arrays.asList(0, 30)}" th:text="${minute}" th:value="${minute}"></option>
+                </select>
+            </div>
+            <div class="control-group">
+                <input type="submit" value="Verstuur">
+            </div>
     </form>
 </body>
 </html>
