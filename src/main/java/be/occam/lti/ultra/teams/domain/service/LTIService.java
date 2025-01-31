@@ -2,6 +2,8 @@ package be.occam.lti.ultra.teams.domain.service;
 
 import be.occam.lti.ultra.teams.config.SystemProperties;
 import be.occam.lti.ultra.teams.domain.LTIContentItem;
+import be.occam.lti.ultra.teams.domain.LTILaunchType;
+import be.occam.lti.ultra.teams.domain.LTILoginData;
 import be.occam.lti.ultra.teams.domain.LTIUser;
 import com.azure.core.util.UrlBuilder;
 import com.nimbusds.jose.*;
@@ -14,7 +16,6 @@ import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.oauth2.sdk.ParseException;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.id.Issuer;
-import com.nimbusds.oauth2.sdk.id.State;
 import com.nimbusds.oauth2.sdk.id.Subject;
 import com.nimbusds.oauth2.sdk.token.TypelessToken;
 import com.nimbusds.openid.connect.sdk.Nonce;
@@ -24,12 +25,8 @@ import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.server.session.DefaultWebSessionManager;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriUtils;
 
@@ -79,12 +76,12 @@ public class LTIService {
         );;
     }
 
-    public URI thirdPartyLogin(
+    public LTILoginData thirdPartyLogin(
             Issuer issuer,
-            URI redirectUri,
             ClientID clientId,
             String loginHint,
             String ltiMessageHint,
+            String launchPath,
             HttpServletRequest httpRequest) {
         if (!ltiIdTokenValidator.getExpectedIssuer().equals(issuer)) {
                 logger.warn("Expected issuer [{}], actual [{}]", ltiIdTokenValidator.getExpectedIssuer(), issuer);
@@ -94,15 +91,15 @@ public class LTIService {
             logger.warn("Expected client id [{}], actual [{}]", ltiIdTokenValidator.getClientID(), clientId);
             throw new ResponseStatusException(BAD_REQUEST);
         }
-        else if (!Arrays.stream(this.redirects).anyMatch(r -> r.equals(redirectUri))) {
-            logger.warn("Expected redirect uris {}, actual [{}]", this.redirects, redirectUri);
-            throw new ResponseStatusException(BAD_REQUEST);
-        }
 
         String nonce = UUID.randomUUID().toString().replace("-","");
+        String state = nonce;
+        String ltiRedirect = "%s%s".formatted(this.systemProperties.baseURL(),launchPath);
+        /* cookieless
         HttpSession session = httpRequest.getSession(true);
         // TODO: make multi-tab-safe (session shared between tabs)
         session.setAttribute(SESSION_ATTRIBUTE_NONCE, nonce);
+         */
         URI redirectURI = new DefaultUriBuilderFactory()
                 .builder()
                 .scheme(this.oauthOidcInitUri.getScheme())
@@ -111,19 +108,20 @@ public class LTIService {
                 .queryParam("scope", "openid")
                 .queryParam("response_type", "id_token")
                 .queryParam("client_id", clientId.getValue())
-                .queryParam("redirect_uri", UriUtils.encodeQueryParam(redirectUri.toString(),Charset.defaultCharset()))
-                // TODO - store login hint for later verification
+                .queryParam("redirect_uri", UriUtils.encodeQueryParam(ltiRedirect,Charset.defaultCharset()))
                 .queryParam("login_hint", loginHint)
                 .queryParam("lti_message_hint", ltiMessageHint)
                 .queryParam("response_mode", "form_post")
                 .queryParam("nonce", nonce)
+                .queryParam("state", state)
                 .queryParam("prompt", "none")
                 .build();
 
         logger.info("redirect uri = [{}]", redirectURI.toString());
-        return redirectURI;
+        return new LTILoginData(state,nonce,redirectURI);
     }
 
+    /* with cookies
     public LTIUser authenticated(String idTokenString, String stateString, HttpServletRequest httpRequest) {
         try {
             JWT idToken = JWTParser.parse(idTokenString);
@@ -142,7 +140,7 @@ public class LTIService {
             String userId = (String) lisClaims.get("person_sourcedid");
             String email = (String) claims.get("email");
             String oneTimeSessionId = (String) claims.get("https://blackboard.com/lti/claim/one_time_session_token");
-            LTIUser ltiUser = new LTIUser(new Subject(userId), new TypelessToken(oneTimeSessionId), email);
+            LTIUser ltiUser = new LTIUser(new Subject(userId), new TypelessToken(oneTimeSessionId), email, idToken);
             PreAuthenticatedAuthenticationToken authentication = new PreAuthenticatedAuthenticationToken(userId, oneTimeSessionId);
             authentication.setAuthenticated(true);
             authentication.setDetails(ltiUser);
@@ -155,28 +153,90 @@ public class LTIService {
             throw new RuntimeException(e);
         }
     }
+     */
 
-    public JWT deepLinkingResponseToken(String title, URL url, HttpServletRequest httpRequest) {
+    public LTIUser authenticated(String idTokenString, String state, Map<String,Object> claims) {
         try {
-            HttpSession session = httpRequest.getSession(false);
-            JWT deepLinkingRequestToken = (JWT) session.getAttribute(SESSION_ATTRIBUTE_JWT);
+            JWT idToken = JWTParser.parse(idTokenString);
+            //State state = State.parse(stateString);
+            // TODO: make multi-tab-safe (session shared between tabs, should use unique attribute name)
+            /*
+            String nonce = (String) session.getAttribute(SESSION_ATTRIBUTE_NONCE);
+            logger.info("nonce stored in session with id [{}]: [{}]", session.getId(), nonce);
+             */
+            // TODO, state = nonce is probably not too safe, think about it ... hash/sign it perhaps ?
+            JWTClaimsSet jwtClaims = this.validateToken(idToken,new Nonce(state));
+            claims.putAll(jwtClaims.getClaims());
+            Map<String,Object> lisClaims = (Map) claims.get("https://purl.imsglobal.org/spec/lti/claim/lis");
+            logger.info("lis claim is [{}]", lisClaims);
+            String userId = (String) lisClaims.get("person_sourcedid");
+            String email = (String) claims.get("email");
+            String oneTimeSessionId = (String) claims.get("https://blackboard.com/lti/claim/one_time_session_token");
+            LTIUser ltiUser = new LTIUser(new Subject(userId), new TypelessToken(oneTimeSessionId), email, idToken);
+            return ltiUser;
+        }
+        catch(Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    public LTILaunchType launchType(Map<String,Object> claims ) {
+        final String messageType = (String) claims.get("https://purl.imsglobal.org/spec/lti/claim/message_type");
+        return switch(messageType) {
+            case "LtiDeepLinkingRequest" -> LTILaunchType.DEEPLINKING_REQUEST;
+            case "LtiResourceLinkRequest" -> LTILaunchType.RESOURCE_LINK_REQUEST;
+            default -> LTILaunchType.X;
+        };
+    }
+
+    public URL targetURL(Map<String,Object> claims ) {
+        try {
+            final String targetLinkUrl = (String) claims.get("https://purl.imsglobal.org/spec/lti/claim/target_link_uri");
+            return UrlBuilder.parse(targetLinkUrl).toUrl();
+        }
+        catch(Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    public JWT deepLinkingResponseToken(String title, URL url, String jwt) {
+        try {
+            JWT requestToken = JWTParser.parse(jwt);
             JWSHeader header = new JWSHeader
                     .Builder(JWSAlgorithm.RS256)
                     .type(JOSEObjectType.JWT)
+                    .keyID(this.systemProperties.jwkId())
                     .build();
+
+            logger.info("create deeplinking response token for meeting with url [{}]", url.toString());
+
+            // data we need from the request token
+            String requestDeploymentId = (String) requestToken.getJWTClaimsSet().getClaim("https://purl.imsglobal.org/spec/lti/claim/deployment_id");
+            String requestIssuer = requestToken.getJWTClaimsSet().getIssuer();
+            String requestAudience = requestToken.getJWTClaimsSet().getAudience().get(0);
+            Map<String,Object> deeplinkSettings = (Map) requestToken.getJWTClaimsSet().getClaim("https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings");
+            String requestData = (String) deeplinkSettings.get("data");
+
             JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                    .issuer(deepLinkingRequestToken.getJWTClaimsSet().getIssuer())
-                    .audience(deepLinkingRequestToken.getJWTClaimsSet().getAudience())
+                    // issuer = requestToken.audience
+                    .issuer(requestAudience)
+                    // audience = requestToken.issuer
+                    .audience(requestIssuer)
                     .expirationTime(new Date(Instant.now().plus(Duration.ofMinutes(5L)).toEpochMilli()))
-                    .issueTime(new Date(Instant.now().plus(Duration.ofMinutes(5L)).toEpochMilli()))
-                    .claim("nonce",deepLinkingRequestToken.getJWTClaimsSet().getClaim("nonce"))
-                    .claim("https://purl.imsglobal.org/spec/lti/claim/deployment_id", deepLinkingRequestToken.getJWTClaimsSet().getClaim("https://purl.imsglobal.org/spec/lti/claim/deployment_id"))
+                    .issueTime(new Date(Instant.now().toEpochMilli()))
+                    // nonce = uuid
+                    .claim("nonce", UUID.randomUUID().toString().replace("-",""))
+                    // deployment id = requestToken.deployment_id
+                    .claim("https://purl.imsglobal.org/spec/lti/claim/deployment_id", requestDeploymentId )
+                    .claim("https://purl.imsglobal.org/spec/lti-dl/claim/data",requestData)
                     .claim("https://purl.imsglobal.org/spec/lti/claim/message_type","LtiDeepLinkingResponse")
                     .claim("https://purl.imsglobal.org/spec/lti/claim/version","1.3.0")
                     .claim("https://purl.imsglobal.org/spec/lti-dl/claim/content_items", List.of(
-                        new LTIContentItem("ltiResourceLink", title, url)
+                        new LTIContentItem("ltiResourceLink", title, url) // this redirects to LTI again...
+                        // new LTIContentItem("link", title, url) // this redirects to the url...
                     ))
                     .build();
+            logger.info("built deeplinking response jwt with claims {}", jwtClaimsSet.toJSONObject());
             SignedJWT deepLinkingResponseToken =  new SignedJWT(header,jwtClaimsSet);
             JWSSigner signer = new RSASSASigner(this.jwkSetService.privateKey());
             try {

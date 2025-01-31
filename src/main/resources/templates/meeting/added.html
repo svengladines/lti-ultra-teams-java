@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Teams meeting</title>
+</head>
+<body>
+
+    <p>You have been added to following meeting</p>
+
+    <table>
+        <tr>
+            <th>Onderwerp</th>
+            <td th:text="${meeting.subject}"></td>
+        </tr>
+        <tr>
+            <th>Aangemaakt door</th>
+            <td th:text="${meeting.organizer}"></td>
+        </tr>
+        <tr>
+            <th>Verwijder me als deelnemer</th>
+            <td>
+                <form method="POST" action="xxx"></form>
+                <input type="button" onclick="">Verwijder me</td>
+        </tr>
+        <tr>
+            <th>Deelnemen</th>
+            <td><a th:href="@{${meeting.joinUrl}}" target="_blank">Deelnemen kan via deze link</a></td>
+        </tr>
+        <tr>
+            <th>Deelnemers</th>
+            <td>
+                <ul>
+                    <li th:each="participant:${meeting.participants}" th:text="${participant}"/>
+                </ul>
+            </td>
+        </tr>
+
+    </table>
+</body>
+</html>

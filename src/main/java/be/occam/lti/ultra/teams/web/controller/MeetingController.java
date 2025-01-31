@@ -1,149 +1,142 @@
 package be.occam.lti.ultra.teams.web.controller;
 
+import static be.occam.lti.ultra.teams.util.URLHelper.*;
 import be.occam.lti.ultra.teams.config.SystemProperties;
-import be.occam.lti.ultra.teams.config.feature.LocalProperties;
-import be.occam.lti.ultra.teams.domain.LTIUser;
 import be.occam.lti.ultra.teams.domain.TeamsMeeting;
 import be.occam.lti.ultra.teams.domain.service.LTIService;
 import be.occam.lti.ultra.teams.domain.service.MeetingService;
 import be.occam.lti.ultra.teams.web.dto.MeetingDTO;
+import be.occam.lti.ultra.teams.web.dto.ParticipantDTO;
 import com.azure.core.util.UrlBuilder;
+import com.microsoft.graph.models.OnlineMeeting;
 import com.nimbusds.jwt.JWT;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.DefaultUriBuilderFactory;
-import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.web.util.UriUtils;
 
-import java.net.URI;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
+import java.util.List;
+import java.util.Optional;
 
 @Controller
 public class MeetingController {
 
-    public static final String LAUNCH_PATH = "/meeting";
-    public static final String LAUNCH_PATH_LOCAL = "/meetingLocal";
-    public static final String PATH_CREATED = "/meeting/created";
-    public static final String RESOURCE_PATH = "/api/meetings";
+    public static final String VIEW_PATH = "/meeting/{organizer}/{id}.html";
+
+    public static final String RESOURCE_COLLECTION_PATH = "/api/meetings";
+    public static final String RESOURCE_PATH = "/api/meetings/{organizer}/{id}";
+    public static final String RESOURCE_PARTICIPANTS_PATH = "/api/meetings/{organizer}/{id}/participants";
 
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final LTIService ltiService;
     protected final MeetingService meetingService;
-    protected final LocalProperties localProperties;
     protected final SystemProperties systemProperties;
 
     @Autowired
-    public MeetingController(LTIService ltiService, MeetingService meetingService, LocalProperties localProperties, SystemProperties systemProperties) {
+    public MeetingController(LTIService ltiService, MeetingService meetingService, SystemProperties systemProperties) {
         this.ltiService = ltiService;
         this.meetingService = meetingService;
-        this.localProperties = localProperties;
         this.systemProperties = systemProperties;
     }
 
-    @PostMapping(value = LAUNCH_PATH)
-    public ResponseEntity<String> launch(
-            @RequestParam("id_token") String idToken,
-            @RequestParam("state") String state,
-            HttpServletRequest httpRequest,
-            Model model
-    ) {
-        if (this.localProperties.enabled()) {
-            URI redirectURI = new DefaultUriBuilderFactory()
-                    .builder()
-                    .scheme("http")
-                    .host("localhost")
-                    .port(8080)
-                    .path(LAUNCH_PATH_LOCAL)
-                    .build();
-            MultiValueMap<String,String> headers = new HttpHeaders();
-            headers.add("Location", redirectURI.toString());
-            return new ResponseEntity<>(headers, HttpStatus.TEMPORARY_REDIRECT);
+    @GetMapping(value = RESOURCE_PATH, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ResponseEntity<MeetingDTO> get(
+            @PathVariable("organizer") String organizer,
+            @PathVariable("id") String id,
+            Model model) {
+        Optional<TeamsMeeting> oMeeting = this.meetingService.get(organizer,id);
+        if (oMeeting.isPresent()) {
+            return new ResponseEntity<>(map(oMeeting.get()), HttpStatus.OK);
         }
         else {
-            LTIUser ltiUser = this.ltiService.authenticated(idToken, state,httpRequest);
-            logger.info("User [{}] with email [{}] logged in via LTI", ltiUser.userId(), ltiUser.email());
-            MultiValueMap<String,String> headers = new HttpHeaders();
-            headers.add("Location", "/pages/meeting/create");
-            return new ResponseEntity<>(headers, HttpStatus.FOUND);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+
     }
 
-    @PostMapping(value = LAUNCH_PATH_LOCAL)
-    public ResponseEntity<String> launchLocal(
-            @RequestParam("id_token") String idToken,
-            @RequestParam("state") String state,
-            HttpServletRequest httpRequest,
-            Model model) {
-        // verify LTI claims, etc.
-        LTIUser ltiUser = this.ltiService.authenticated(idToken, state,httpRequest);
-        logger.info("User [{}] with email [{}] logged in via LTI", ltiUser.userId(), ltiUser.email());
-        MultiValueMap<String,String> headers = new HttpHeaders();
-        headers.add("Location", "/pages/meeting/create");
-        return new ResponseEntity<>(headers, HttpStatus.FOUND);
-    }
-
-    @GetMapping(value = RESOURCE_PATH + "/{id}")
-    public String get(
+    @GetMapping(value = VIEW_PATH, produces = MediaType.TEXT_HTML_VALUE)
+    public String view(
+            @PathVariable("organizer") String organizer,
             @PathVariable("id") String id,
-            PreAuthenticatedAuthenticationToken user) {
-        TeamsMeeting meeting = this.meetingService.get(id);
-        return "redirect:%s".formatted(meeting.joinURL());
+            @RequestParam("me") String me,
+            Model model) {
+            this.meetingService.get(organizer,id).ifPresent(m -> {
+                model.addAttribute("meeting", map(m));
+                model.addAttribute("me", me);
+                model.addAttribute("participantsUrl", participantsURL(m));
+            });
+        return "meeting/view";
     }
 
-    @PostMapping(value = RESOURCE_PATH, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity<String> post(
+    @PostMapping(value = RESOURCE_COLLECTION_PATH, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public String postForm(
             @ModelAttribute MeetingDTO meetingDTO,
-            PreAuthenticatedAuthenticationToken user,
             HttpServletRequest httpRequest,
             Model model) {
-
-        // verify LTI claims, etc.
-        LTIUser ltiUser = (LTIUser) user.getDetails();
-        String subject = meetingDTO.getSubject();
-        TeamsMeeting teamsMeeting = this.meetingService.create(ltiUser, subject, httpRequest);
-        JWT jwt = this.ltiService.deepLinkingResponseToken(subject,teamsMeeting.url(),httpRequest);
-        // now redirect to page that contains self-posting form, via iframe
-        // first build url to self-posting form
         try {
-            URL urlToForm = UrlBuilder
-                    .parse(this.systemProperties.baseURL())
-                    .setPath(PATH_CREATED)
-                    .addQueryParameter("fiz", URLEncoder.encode(jwt.serialize(), Charset.defaultCharset()))
-                    .toUrl();
-            logger.info("url to self submitting form: [{}]", urlToForm);
-            URL redirectURI = UrlBuilder
-                    .parse(this.systemProperties.frameURL())
-                    .addQueryParameter("toolHref", UriComponentsBuilder.fromUriString(urlToForm.toString()).build().encode().toString())
-                    .toUrl();
-            MultiValueMap<String,String> headers = new HttpHeaders();
-            headers.add("Location", redirectURI.toString());
-            return new ResponseEntity<>(headers, HttpStatus.FOUND);
+            String subject = meetingDTO.getSubject();
+            TeamsMeeting teamsMeeting = this.meetingService.create(meetingDTO.getOrganizer(), subject, httpRequest).orElseThrow(() -> new RuntimeException("could not create meeting"));
+            JWT jwt = this.ltiService.deepLinkingResponseToken(subject,viewURL(teamsMeeting),meetingDTO.getJwt());
+            model.addAttribute("jwt", jwt.serialize());
+            // TODO, remove hardcoded, use value from launch request
+            model.addAttribute("responseUrl", "%s/webapps/blackboard/controller/lti/v2/deeplinking".formatted(this.systemProperties.ultraURL()));
+            return "lti/deeplinking-response";
         }
         catch(Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    @GetMapping(value = PATH_CREATED)
-    public String created(
-            @RequestParam String fiz,
+    @PostMapping(value = RESOURCE_PARTICIPANTS_PATH, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public String postForm(
+            @PathVariable("organizer") String organizer,
+            @PathVariable("id") String meetingId,
+            @ModelAttribute ParticipantDTO participant,
             HttpServletRequest httpRequest,
             Model model) {
-        model.addAttribute("responseUrl", this.systemProperties.deeplinkURL());
-        model.addAttribute("jwt", fiz);
-        return "lti/deeplinking-meeting-created";
+        try {
+            Optional<TeamsMeeting> updatedMeeting = this.meetingService.addParticipant(organizer,meetingId,participant);
+            updatedMeeting.ifPresent(m -> {
+                model.addAttribute("meeting", map(m));
+                model.addAttribute("participantsUrl", participantsURL(m));
+            });
+
+            return "meeting/added";
+        }
+        catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected static MeetingDTO map(TeamsMeeting from) {
+        MeetingDTO to = new MeetingDTO();
+        to.setId(from.id());
+        to.setOrganizer(from.organizer());
+        to.setSubject(from.subject());
+        to.setJoinUrl(from.joinURL());
+        to.setParticipants(List.copyOf(from.participants()));
+        return to;
+    }
+
+    protected URL resourceURL(TeamsMeeting meeting) {
+     return url(builder("%s%s".formatted(this.systemProperties.baseURL(), RESOURCE_PATH).toString().replace("{organizer}", meeting.organizer()).replace("{id}", meeting.id())));
+    }
+
+    protected URL viewURL(TeamsMeeting meeting) {
+        return url(builder("%s%s".formatted(this.systemProperties.baseURL(), VIEW_PATH).toString().replace("{organizer}", meeting.organizer()).replace("{id}", meeting.id())));
+    }
+
+    protected URL participantsURL(TeamsMeeting meeting) {
+        URL resourceURL = this.resourceURL(meeting);
+        String path = resourceURL.getPath();
+        return url(builder(resourceURL).setPath("%s/participants".formatted(path)));
     }
 }

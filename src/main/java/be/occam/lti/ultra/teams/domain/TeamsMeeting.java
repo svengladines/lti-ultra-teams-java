@@ -1,13 +1,21 @@
 package be.occam.lti.ultra.teams.domain;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TeamsMeeting {
 
     protected String id;
+    protected String organizer;
     protected String subject;
     protected String joinURL;
     protected URL url;
+    final protected List<String> participants;
+
+    public TeamsMeeting() {
+        this.participants = new ArrayList<>();
+    }
 
     public String id() {
         return id;
@@ -36,6 +44,15 @@ public class TeamsMeeting {
         return this;
     }
 
+    public String organizer() {
+        return organizer;
+    }
+
+    public TeamsMeeting organizer(String organizer) {
+        this.organizer = organizer;
+        return this;
+    }
+
     public URL url() {
         return url;
     }
@@ -43,5 +60,9 @@ public class TeamsMeeting {
     public TeamsMeeting url(URL url) {
         this.url = url;
         return this;
+    }
+
+    public List<String> participants() {
+        return participants;
     }
 }

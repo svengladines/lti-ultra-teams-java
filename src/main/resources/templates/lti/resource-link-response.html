@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <a id="redirectLink" th:href="@{${redirectUrl}}">Go to resource</a>
+</body>
+<script>
+    window.location.href = document.getElementById('redirectLink').href;
+</script>
+
+</html>

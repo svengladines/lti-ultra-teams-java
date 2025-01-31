@@ -27,19 +27,16 @@ public class SecurityConfig {
 
             .authorizeHttpRequests(authz -> authz.requestMatchers("/error").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/favicon.ico").permitAll())
-
-            .authorizeHttpRequests(authz -> authz.requestMatchers("/ltiLogin").permitAll())
-            .authorizeHttpRequests(authz -> authz.requestMatchers("/ltiLoginLocal").permitAll())
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/javascript/*").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/login/*").permitAll())
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/ltiLogin").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/jwks").permitAll())
-            // permit all as it is the local instance that is authenticated
-            .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting").permitAll())
-            .authorizeHttpRequests(authz -> authz.requestMatchers("/meetingLocal").permitAll())
 
-            .authorizeHttpRequests(authz -> authz.requestMatchers("/pages/meeting/*").authenticated())
-            .authorizeHttpRequests(authz -> authz.requestMatchers("/api/meetings").authenticated())
-            // this page opens in ultra-frame, no session cookie sent, so permit all for now
-            .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting/created").permitAll())
+            // permit all (cookieless and therefore sessionless and therefore not authenticated)
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting").permitAll())
+                .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting/**").permitAll())
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/api/meetings").permitAll())
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/api/meetings/**").permitAll())
             .build();
     }
 

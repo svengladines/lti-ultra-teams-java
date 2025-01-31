@@ -7,6 +7,8 @@
 <body>
 
     <form method="POST" th:action="@{/api/meetings}">
+        <input type="hidden" name="organizer" th:value="${organizer}">
+        <input type="hidden" name="jwt" th:value="${jwt}">
         <input type="text" name="subject">
         <input type="submit">
     </form>
