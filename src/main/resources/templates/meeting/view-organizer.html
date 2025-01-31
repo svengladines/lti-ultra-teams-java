@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/fragment-head :: head}">
+<body>
+    <table class="table table-bordered">
+        <tr>
+            <th>Onderwerp van de meetup</th>
+            <td th:text="${meeting.subject}"></td>
+        </tr>
+        <tr>
+            <th>Intentie om deel te nemen</th>
+            <td>
+                <ul>
+                    <li th:each="participant:${meeting.participants}" th:text="${participant}"/>
+                </ul>
+            </td>
+        <tr>
+            <th>Deelnemen</th>
+            <td><a th:href="@{${meeting.joinUrl}}" target="_blank">Via deze link</a>kan je de aan de meetup deelnemen.</td>
+        </tr>
+    </table>
+</body>
+</html>

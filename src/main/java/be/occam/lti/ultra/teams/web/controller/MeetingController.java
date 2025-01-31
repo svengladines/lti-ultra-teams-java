@@ -73,7 +73,7 @@ public class MeetingController {
                 model.addAttribute("me", me);
                 model.addAttribute("participantsUrl", participantsURL(m));
             });
-        return "meeting/view";
+        return organizer.equals(me) ? "meeting/view-organizer" : "meeting/view-learner";
     }
 
     @PostMapping(value = RESOURCE_COLLECTION_PATH, consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
