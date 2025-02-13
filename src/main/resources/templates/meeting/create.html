@@ -19,11 +19,11 @@
             <div class="control-group">
                 <label>Van</label>
                 <select id="from-hour" name="fromHour">
-                    <option th:each="hour : ${#numbers.sequence(0, 23)}" th:text="${hour}" th:value="${hour}"></option>
+                    <option th:each="hour : ${#numbers.sequence(0,23)}" th:text="${hour}" th:value="${hour}"></option>
                 </select>
                 &nbsp;
                 <select id="from-minute" name="fromMinute">
-                    <option th:each="minute : ${{0, 30}}" th:text="${minute}" th:value="${minute}"></option>
+                    <option th:each="minute : ${#arrays.asList(0,30')}" th:text="${minute}" th:value="${minute}"></option>
                 </select>
             </div>
             <div class="control-group">
@@ -33,7 +33,7 @@
                 </select>
                 &nbsp;
                 <select id="to-minute" name="toMinute">
-                    <option th:each="minute : ${{0, 30}}" th:text="${minute}" th:value="${minute}"></option>
+                    <option th:each="minute : ${{0,30}}" th:text="${minute}" th:value="${minute}"></option>
                 </select>
             </div>
             <div class="control-group">
