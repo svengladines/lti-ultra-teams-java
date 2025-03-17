@@ -2,43 +2,63 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/fragment-head :: head}">
 <body>
-
-    <form class="form-horizontal" method="POST" th:action="@{/api/meetings}">
-        <div class="control-group">
-            <input type="hidden" name="organizer" th:value="${organizer}">
-            <input type="hidden" name="jwt" th:value="${jwt}">
+    <br/>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12">
+                <form method="POST" th:action="@{/api/meetings}">
+                    <div class="form-group row">
+                        <input type="hidden" name="organizer" th:value="${organizer}">
+                        <input type="hidden" name="jwt" th:value="${jwt}">
+                    </div>
+                    <div class="row mb-3">
+                        <label for="subject" class="col-sm-2 col-form-label">Onderwerp</label>
+                        <div class="col-sm-10">
+                            <input id="subject" type="text" name="subject" placeholder="Onderwerp" class="form-control">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="date" class="col-sm-2 col-form-label">Datum:</label>
+                        <div class="col-sm-4">
+                            <input type="date" id="date" name="date" class="form-control" th:value="${#dates.format(#dates.createNow(), 'dd-MM-yyyy')}">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-2 col-form-label">Van</label>
+                        <div class="col-sm-2">
+                            <select class="form-select" id="from-hour" name="fromHour">
+                                <option th:each="hour : ${#numbers.sequence(0,23)}" th:text="${hour}" th:value="${hour}"></option>
+                            </select>
+                        </div>
+                        <div class="col-sm-2">
+                            <select class="form-select" id="from-minute" name="fromMinute">
+                                <option th:each="minute : ${ {0,30} }" th:text="${minute}" th:value="${minute}"></option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-2 col-form-label">Tot</label>
+                        <div class="col-sm-2">
+                            <select class="form-select" id="to-hour" name="toHour">
+                                <option th:each="hour : ${#numbers.sequence(0, 23)}" th:text="${hour}" th:value="${hour}"></option>
+                            </select>
+                        </div>
+                        <div class="col-sm-2">
+                            <select class="form-select" id="to-minute" name="toMinute">
+                                <option th:each="minute : ${ {0,30} }" th:text="${minute}" th:value="${minute}"></option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-2">
+                        </div>
+                        <div class="col-sm-2">
+                            <button type="submit" class="btn btn-primary">Verstuur</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
-            <div class="control-group">
-                <label for="subject">Onderwerp</label>
-                <input id="subject" type="text" name="subject" placeholder="Onderwerp">
-            </div>
-            <div class="control-group">
-                <label for="date">Datum:</label>
-                <input type="date" id="date" name="date" th:value="${#dates.format(#dates.createNow(), 'dd-MM-yyyy')}">
-            </div>
-            <div class="control-group">
-                <label>Van</label>
-                <select id="from-hour" name="fromHour">
-                    <option th:each="hour : ${#numbers.sequence(0,23)}" th:text="${hour}" th:value="${hour}"></option>
-                </select>
-                &nbsp;
-                <select id="from-minute" name="fromMinute">
-                    <option th:each="minute : ${#arrays.asList(0,30')}" th:text="${minute}" th:value="${minute}"></option>
-                </select>
-            </div>
-            <div class="control-group">
-                <label>Tot</label>
-                <select id="to-hour" name="toHour">
-                    <option th:each="hour : ${#numbers.sequence(0, 23)}" th:text="${hour}" th:value="${hour}"></option>
-                </select>
-                &nbsp;
-                <select id="to-minute" name="toMinute">
-                    <option th:each="minute : ${{0,30}}" th:text="${minute}" th:value="${minute}"></option>
-                </select>
-            </div>
-            <div class="control-group">
-                <input type="submit" value="Verstuur">
-            </div>
-    </form>
+    </div>
 </body>
 </html>

@@ -37,6 +37,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz.requestMatchers("/meeting/**").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/api/meetings").permitAll())
             .authorizeHttpRequests(authz -> authz.requestMatchers("/api/meetings/**").permitAll())
+
+                // only for development
+            .authorizeHttpRequests(authz -> authz.requestMatchers("/local/**").permitAll())
             .build();
     }
 
