@@ -5,6 +5,7 @@
 name: My C/I
 
 on:
+  workflow_dispatch:
   push:
     branches: [ "master", "feature-cookieless-lti" ]
   pull_request:
